@@ -1,35 +1,57 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState } from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
-function App() {
-  const [count, setCount] = useState(0)
+import Topbar from "./components/Topbar";
+import Dashboard from "./components/Dashboard";
+import AddSales from "./components/AddSales";
+import AddPurchase from "./components/AddPurchase";
+import QuickPOS from "./components/QuickPOS";
+import AddReminder from "./components/AddReminder";
+import CompleteProfile from "./components/CompleteProfile";
+import PaymentInForm from "./components/PaymentIn"; // ✅ Import PaymentInForm
+
+export default function App() {
+  const [theme, setTheme] = useState("system");
+  const [active, setActive] = useState("dashboard");
+  const [reminders, setReminders] = useState([]);
+  const [showReminder, setShowReminder] = useState(false);
+
+  const handleSaveReminder = (reminder) => {
+    setReminders([...reminders, reminder]);
+  };
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
-}
+    <Router>
+      <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
+        <div className="flex-1">
+          <Topbar
+            theme={theme}
+            setTheme={setTheme}
+            onAddReminder={() => setShowReminder(true)}
+          />
 
-export default App
+          <main className="p-6">
+            <Routes>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/add-sales" element={<AddSales />} />
+              <Route path="/add-purchase" element={<AddPurchase />} />
+              <Route path="/payment-in" element={<PaymentInForm />} /> {/* ✅ PaymentIn Route */}
+              <Route
+                path="/quick-pos"
+                element={<QuickPOS onClose={() => window.history.back()} />}
+              />
+              <Route path="/complete-profile" element={<CompleteProfile />} />
+            </Routes>
+          </main>
+        </div>
+
+        {showReminder && (
+          <AddReminder
+            onClose={() => setShowReminder(false)}
+            onSave={handleSaveReminder}
+          />
+        )}
+      </div>
+    </Router>
+  );
+}
