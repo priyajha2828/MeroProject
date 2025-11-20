@@ -8,12 +8,7 @@ export default function App() {
   const [showForm, setShowForm] = useState(""); // "sales" or "purchase"
 
 
-  // return (
-  //   <div className="flex">
-  //     <h1 className="text-blue-500">THIS IS APPP</h1>
-  //     </div>
-  // )
-
+  
   return (
     <div className="flex">
       <Sidebar active={active} setActive={(page) => {
