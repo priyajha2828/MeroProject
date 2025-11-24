@@ -1,7 +1,9 @@
-import { useState } from "react";
 import { Routes, Route, useNavigate } from "react-router-dom";
+import { useState } from "react";
 
+import Sidebar from "./components/Sidebar";
 import Topbar from "./components/Topbar";
+
 import Dashboard from "./components/Dashboard";
 import AddSales from "./components/AddSales";
 import AddPurchase from "./components/AddPurchase";
@@ -16,7 +18,6 @@ import PurchaseInsights from "./components/PurchaseInsights";
 import ExpenseInsights from "./components/ExpenseInsights";
 import SalesReturn from "./components/SalesReturn";
 import PurchaseReturn from "./components/PurchaseReturn";
-import Sidebar from "./components/Sidebar";
 
 export default function App() {
   const navigate = useNavigate();
@@ -31,14 +32,16 @@ export default function App() {
   return (
     <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900">
 
-      {/* ✅ SIDEBAR FIXED */}
+      {/* SIDEBAR */}
       <Sidebar />
 
-      <div className="flex-1">
+      {/* RIGHT CONTENT AREA */}
+      <div className="flex-1 flex flex-col">
 
         {/* TOPBAR */}
         <Topbar onProfileClick={() => navigate("/complete-profile")} />
 
+        {/* MAIN CONTENT */}
         <main className="p-6">
           <Routes>
             <Route path="/" element={<Dashboard />} />
