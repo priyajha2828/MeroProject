@@ -1,0 +1,35 @@
+[33mcommit 90e2256acc010a2ad264c35b1ae366be7cd0a30d[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mhomepage[m[33m, [m[1;31morigin/homepage[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Author: Priya Kumari Jha <priyajhaguriya@gmailcom>
+Date:   Thu Nov 20 14:40:58 2025 +0545
+
+    files changed
+
+[33mcommit 1da05ce2d6bb986e9e80160f8b209b338140bb9d[m
+Author: Priya Kumari Jha <priyajhaguriya@gmailcom>
+Date:   Wed Nov 19 15:37:02 2025 +0545
+
+    dashboard.jsx added deleted
+
+[33mcommit 60aaaffa48e67cf48d7c48878432ac4fdb148037[m
+Author: Priya Kumari Jha <priyajhaguriya@gmailcom>
+Date:   Wed Nov 19 15:32:50 2025 +0545
+
+    dashboard.jsx added
+
+[33mcommit 0f6fb08778794c33e68b93e1081c4d668d80c411[m
+Author: Priya Kumari Jha <priyajhaguriya@gmailcom>
+Date:   Wed Nov 19 12:58:53 2025 +0545
+
+    navbar.jsx added
+
+[33mcommit 31c5aa3adf0652134282314d26928f72df566bb6[m
+Author: Priya Kumari Jha <priyajhaguriya@gmailcom>
+Date:   Wed Nov 19 12:45:35 2025 +0545
+
+    feat: Added Sidebar component structure and initial styling
+
+[33mcommit 5fa1c0a0dbe4a4b00f17ae672df3fb07786f6e85[m
+Author: Priya Kumari Jha <priyajhaguriya@gmailcom>
+Date:   Wed Nov 19 12:36:56 2025 +0545
+
+    arthik-marg
