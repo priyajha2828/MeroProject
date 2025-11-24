@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { Routes, Route, useNavigate } from "react-router-dom";
 
 import Topbar from "./components/Topbar";
 import Dashboard from "./components/Dashboard";
@@ -8,11 +8,18 @@ import AddPurchase from "./components/AddPurchase";
 import QuickPOS from "./components/QuickPOS";
 import AddReminder from "./components/AddReminder";
 import CompleteProfile from "./components/CompleteProfile";
-import PaymentInForm from "./components/PaymentIn"; // ✅ Import PaymentInForm
+import PaymentInForm from "./components/PaymentIn";
+import PaymentOutForm from "./components/PaymentOut";
+import Quotation from "./components/Quotation";
+import SaleInsights from "./components/SaleInsights";
+import PurchaseInsights from "./components/PurchaseInsights";
+import ExpenseInsights from "./components/ExpenseInsights";
+import SalesReturn from "./components/SalesReturn";
+import PurchaseReturn from "./components/PurchaseReturn";
 
 export default function App() {
-  const [theme, setTheme] = useState("system");
-  const [active, setActive] = useState("dashboard");
+  const navigate = useNavigate();
+
   const [reminders, setReminders] = useState([]);
   const [showReminder, setShowReminder] = useState(false);
 
@@ -21,37 +28,39 @@ export default function App() {
   };
 
   return (
-    <Router>
-      <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
-        <div className="flex-1">
-          <Topbar
-            theme={theme}
-            setTheme={setTheme}
-            onAddReminder={() => setShowReminder(true)}
-          />
+    <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="flex-1">
 
-          <main className="p-6">
-            <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/add-sales" element={<AddSales />} />
-              <Route path="/add-purchase" element={<AddPurchase />} />
-              <Route path="/payment-in" element={<PaymentInForm />} /> {/* ✅ PaymentIn Route */}
-              <Route
-                path="/quick-pos"
-                element={<QuickPOS onClose={() => window.history.back()} />}
-              />
-              <Route path="/complete-profile" element={<CompleteProfile />} />
-            </Routes>
-          </main>
-        </div>
+        {/* FIXED — added onProfileClick */}
+        <Topbar onProfileClick={() => navigate("/complete-profile")} />
 
-        {showReminder && (
-          <AddReminder
-            onClose={() => setShowReminder(false)}
-            onSave={handleSaveReminder}
-          />
-        )}
+        <main className="p-6">
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/add-sales" element={<AddSales />} />
+            <Route path="/add-purchase" element={<AddPurchase />} />
+            <Route path="/payment-in" element={<PaymentInForm />} />
+            <Route path="/payment-out" element={<PaymentOutForm />} />
+            <Route path="/quotation" element={<Quotation />} />
+            <Route path="/sales-return" element={<SalesReturn />} />
+            <Route path="/purchase-return" element={<PurchaseReturn />} />
+            <Route path="/sale-insights" element={<SaleInsights />} />
+            <Route path="/purchase-insights" element={<PurchaseInsights />} />
+            <Route path="/expense-insights" element={<ExpenseInsights />} />
+            <Route path="/quick-pos" element={<QuickPOS />} />
+
+            {/* PROFILE PAGE ROUTE */}
+            <Route path="/complete-profile" element={<CompleteProfile />} />
+          </Routes>
+        </main>
       </div>
-    </Router>
+
+      {showReminder && (
+        <AddReminder
+          onClose={() => setShowReminder(false)}
+          onSave={handleSaveReminder}
+        />
+      )}
+    </div>
   );
 }

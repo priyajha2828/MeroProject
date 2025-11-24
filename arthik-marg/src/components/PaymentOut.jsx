@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Camera } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-export default function PaymentIn() {
+export default function PaymentOut() {
 const navigate = useNavigate();
 
 const [receiptType, setReceiptType] = useState("auto");
@@ -17,10 +17,11 @@ const [image, setImage] = useState(null);
 const handleSubmit = (e, saveNew = false) => {
 e.preventDefault();
 console.log({ receiptNumber, date, party, amount, paymentMethod, remarks, image });
-alert("Payment In saved!");
+alert("Payment Out saved!");
 
-
+```
 if (saveNew) {
+  // reset form for new entry
   setReceiptType("auto");
   setReceiptNumber("AUTO-001");
   setDate("");
@@ -30,9 +31,9 @@ if (saveNew) {
   setRemarks("");
   setImage(null);
 } else {
-  navigate(-1);
+  navigate(-1); // go back to previous page
 }
-
+```
 
 };
 
@@ -44,11 +45,12 @@ className="absolute top-3 right-3 text-gray-600 dark:text-gray-300 hover:text-gr
 >
 X </button>
 
-    <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-100">Add Payment In</h2>
+
+    <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-100">Add Payment Out</h2>
 
     <form onSubmit={(e) => handleSubmit(e)} className="space-y-4">
 
-      {/* Receipt Number + Date */}
+      {/* Receipt Number + Date inline */}
       <div className="flex gap-4">
         <div className="flex-1">
           <label className="block text-gray-700 dark:text-gray-200 font-semibold mb-1">Receipt Number</label>
@@ -99,9 +101,9 @@ X </button>
         />
       </div>
 
-      {/* Received Amount */}
+      {/* Paid Amount */}
       <div>
-        <label className="block text-gray-700 dark:text-gray-200 font-semibold mb-1">Received Amount</label>
+        <label className="block text-gray-700 dark:text-gray-200 font-semibold mb-1">Paid Amount</label>
         <input
           type="number"
           value={amount}
@@ -138,6 +140,7 @@ X </button>
 
       {/* Image + Buttons */}
       <div className="flex items-center gap-4 mt-2">
+        {/* Image upload */}
         <label className="flex items-center gap-2 px-3 py-2 border rounded cursor-pointer dark:bg-gray-700 dark:text-gray-100">
           <Camera size={20} />
           <span>{image ? "Image Selected" : "Attach Image"}</span>
@@ -149,6 +152,7 @@ X </button>
           />
         </label>
 
+        {/* Save & New */}
         <button
           type="button"
           onClick={(e) => handleSubmit(e, true)}
@@ -157,6 +161,7 @@ X </button>
           Save & New
         </button>
 
+        {/* Save Payment */}
         <button
           type="submit"
           className="px-4 py-2 bg-[#072255] text-white rounded hover:bg-[#061f44]"
@@ -168,5 +173,7 @@ X </button>
     </form>
   </div>
 </div>
+
+
 );
 }
