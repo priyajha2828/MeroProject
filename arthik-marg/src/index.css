@@ -1,17 +1,25 @@
 @import "tailwindcss";
 
-/* Light mode */
-body {
-  @apply bg-gray-50 text-gray-900 transition-colors duration-300;
+/* src/index.css - REPLACE ENTIRE FILE */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Use CSS variables to avoid @apply parse issues */
+:root {
+  --bg: #f8fafc;     /* tailwind gray-50 */
+  --text: #111827;   /* tailwind gray-900 */
+}
+.dark {
+  --bg: #0f172a;     /* tailwind gray-900 */
+  --text: #f3f4f6;   /* tailwind gray-100 */
 }
 
-/* Dark mode */
-.dark body {
-  @apply bg-gray-900 text-gray-100;
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  background-color: var(--bg);
+  color: var(--text);
+  transition: background-color .2s ease, color .2s ease;
 }
 
-/* Classic theme */
-.classic body {
-  background-color: #fdf6e3;
-  color: #333;
-}

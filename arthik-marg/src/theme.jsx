@@ -1,18 +1,38 @@
 import { createContext, useEffect, useState } from "react";
 
-export const ThemeContext = createContext();
+export const ThemeContext = createContext({
+  theme: "system",
+  setTheme: () => {},
+});
 
 export default function ThemeProvider({ children }) {
-  const [theme, setTheme] = useState("light");
+  const [theme, setTheme] = useState(() => {
+    try {
+      return localStorage.getItem("theme") || "system";
+    } catch {
+      return "system";
+    }
+  });
 
   useEffect(() => {
-    const html = document.documentElement;
+    const root = document.documentElement;
 
-    html.classList.remove("dark", "classic-theme");
+    // remove previous mode
+    root.classList.remove("light", "dark");
 
-    if (theme === "dark") html.classList.add("dark");
-    if (theme === "classic") html.classList.add("classic-theme");
+    if (theme === "light") {
+      root.classList.add("light");
+    } else if (theme === "dark") {
+      root.classList.add("dark");
+    } else {
+      // system mode
+      const dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      root.classList.add(dark ? "dark" : "light");
+    }
 
+    try {
+      localStorage.setItem("theme", theme);
+    } catch {}
   }, [theme]);
 
   return (

@@ -1,5 +1,5 @@
+import React, { useState } from "react";
 import { Routes, Route, useNavigate } from "react-router-dom";
-import { useState } from "react";
 
 import Sidebar from "./components/Sidebar";
 import Topbar from "./components/Topbar";
@@ -19,10 +19,15 @@ import ExpenseInsights from "./components/ExpenseInsights";
 import SalesReturn from "./components/SalesReturn";
 import PurchaseReturn from "./components/PurchaseReturn";
 
-// Import the new pages
+// New imports
+import { InventoryPage } from "./components/InventoryPage";
 import { PurchaseBillsPage } from "./components/PurchaseBillsPage";
 import { ImportPartiesPage } from "./components/ImportPartiesPage";
 import { ImportItemsPage } from "./components/ImportItemsPage";
+import {SalesInvoicePage} from "./components/SalesInvoicePage";
+import { PartiesPage } from "./components/PartiesPage";
+
+
 
 export default function App() {
   const navigate = useNavigate();
@@ -58,6 +63,12 @@ export default function App() {
             <Route path="/expense-insights" element={<ExpenseInsights />} />
             <Route path="/quick-pos" element={<QuickPOS />} />
             <Route path="/complete-profile" element={<CompleteProfile />} />
+
+            {/* Inventory route */}
+            <Route path="/inventory" element={<InventoryPage sidebarOpen={true} />} />
+            <Route path="/sales-invoice" element={<SalesInvoicePage />} />
+            <Route path="/parties" element={<PartiesPage />} />
+
 
             {/* New Pages */}
             <Route
