@@ -54,7 +54,6 @@ export default function Dashboard() {
         <h2 className="text-3xl font-bold">Welcome Rejina Agrawal</h2>
 
         <div className="flex gap-3 relative">
-          {/* Quick POS */}
           <button
             onClick={() => navigate("/quick-pos")}
             className={`${buttonBaseClass} bg-[#072255]`}
@@ -62,7 +61,6 @@ export default function Dashboard() {
             Quick POS
           </button>
 
-          {/* Add Sales */}
           <button
             onClick={() => navigate("/add-sales")}
             className={`${buttonBaseClass} bg-[#072255]`}
@@ -70,7 +68,6 @@ export default function Dashboard() {
             + Add Sales
           </button>
 
-          {/* Add Purchase */}
           <button
             onClick={() => navigate("/add-purchase")}
             className={`${buttonBaseClass} bg-[#072255]`}
@@ -90,7 +87,7 @@ export default function Dashboard() {
             {showAddMore && (
               <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-xl shadow-lg z-50">
                 <button
-                  onClick={() => navigate("/payment-in")}
+                  onClick={() => navigate("/PaymentInPage.jsx")}
                   className="flex items-center gap-2 w-full px-4 py-2 hover:bg-gray-100 rounded-t-xl"
                 >
                   <DollarSign size={16} /> Payment In
@@ -159,26 +156,15 @@ export default function Dashboard() {
                   borderRadius: 8,
                 }}
               />
-
-              <Line
-                type="monotone"
-                dataKey="income"
-                stroke="#10B981"
-                strokeWidth={2}
-              />
-              <Line
-                type="monotone"
-                dataKey="expense"
-                stroke="#EF4444"
-                strokeWidth={2}
-              />
+              <Line type="monotone" dataKey="income" stroke="#10B981" strokeWidth={2} />
+              <Line type="monotone" dataKey="expense" stroke="#EF4444" strokeWidth={2} />
             </LineChart>
           </ResponsiveContainer>
         </div>
       </div>
 
       {/* Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
+      <div className="grid grid-cols-5 gap-4 mb-4">
         <Card
           title="To Receive"
           amount="Rs. 0"
@@ -221,7 +207,7 @@ export default function Dashboard() {
       </div>
 
       {/* Panels */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-3 gap-4 mb-8">
         {/* Reminders */}
         <div className="bg-white p-4 rounded-xl shadow min-h-40">
           <div className="text-sm text-gray-500">
@@ -253,9 +239,7 @@ export default function Dashboard() {
         {/* Balance */}
         <div className="bg-white p-4 rounded-xl shadow min-h-40 flex flex-col justify-between">
           <div>
-            <div className="text-sm text-gray-500">
-              Total Balance (Cash & Bank)
-            </div>
+            <div className="text-sm text-gray-500">Total Balance (Cash & Bank)</div>
             <div className="text-2xl font-semibold mt-2">Rs. 0</div>
           </div>
         </div>
@@ -264,9 +248,7 @@ export default function Dashboard() {
         <div className="bg-white p-4 rounded-xl shadow min-h-40 flex flex-col justify-between">
           <div>
             <div className="text-sm text-gray-500">Complete your Profile</div>
-            <div className="font-semibold text-lg">
-              {profileData ? "100%" : "30%"}
-            </div>
+            <div className="font-semibold text-lg">{profileData ? "100%" : "30%"}</div>
           </div>
 
           <button

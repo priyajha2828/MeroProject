@@ -48,8 +48,11 @@ export default function Sidebar() {
     let path = `/${id}`;
     if (id === 'dashboard') path = '/';
     if (id === 'add-party') path = '/parties/add'; 
-
     navigate(path); 
+
+if (id === "settings") {
+  setSidebarOpen(false); // collapse main sidebar
+}
 
     // Logic to manage dropdown open/close states (kept local for UI)
     if (["purchase-bills", "payment-out", "purchase-return"].includes(id)) {
@@ -140,7 +143,7 @@ export default function Sidebar() {
               className={`border py-4 px-3 rounded-lg flex items-center justify-between cursor-pointer ${
                 isProfileOpen
                   ? `${CUSTOM_BLUE} text-white`
-                  : "border-gray-300 text-gray-700 hover:bg-gray-100"
+                  : "border-gray-300 text-white hover:bg-gray-100"
               }`}
               onClick={() => setIsProfileOpen(!isProfileOpen)}
             >
@@ -197,7 +200,7 @@ export default function Sidebar() {
           <SidebarItem
             label="Parties"
             icon={<Users size={ICON_SIZE} />}
-            id="party"
+            id="parties"
             active={activePage}
             setActive={handleSetActive}
             open={sidebarOpen}
@@ -396,13 +399,13 @@ export default function Sidebar() {
             open={sidebarOpen}
           />
           <SidebarItem
-            label="Settings"
-            icon={<Settings size={ICON_SIZE} />}
-            id="settings"
-            active={activePage}
-            setActive={handleSetActive}
-            open={sidebarOpen}
-          />
+  label="Settings"
+  icon={<Settings size={ICON_SIZE} />}
+  id="settings"
+  active={activePage}
+  setActive={handleSetActive}
+  open={sidebarOpen}
+/>
         </ul>
       </div>
     </>
@@ -419,7 +422,7 @@ function SidebarItem({ label, icon, active, id, setActive, open }) {
       className={`flex items-center gap-3 p-2 rounded cursor-pointer text-lg transition ${
         active === id
           ? `${CUSTOM_BLUE} text-white`
-          : `text-gray-700 ${CUSTOM_BLUE_HOVER_BG} hover:text-white`
+          : `text-gray-700 hover:bg-gray-200 hover:text-black`
       } ${!open && "justify-center"}`}
     >
       {icon}
@@ -437,7 +440,7 @@ function Dropdown({ label, icon, open, setOpen, sidebarOpen, children }) {
         className={`flex items-center justify-between p-2 rounded cursor-pointer text-lg transition ${
           open
             ? `${CUSTOM_BLUE} text-white`
-            : `text-gray-700 ${CUSTOM_BLUE_HOVER_BG} hover:text-white`
+            : `text-gray-700 hover:bg-gray-200 hover:text-black`
         }`}
         onClick={() => setOpen(!open)}
       >
@@ -469,7 +472,7 @@ function DropItem({ label, id, active, setActive }) {
       className={`p-2 text-base rounded cursor-pointer transition ${
         active === id
           ? `${CUSTOM_BLUE} text-white`
-          : `text-gray-700 ${CUSTOM_BLUE_HOVER_BG} hover:text-white`
+          : `text-gray-700 hover:bg-gray-200  hover:text-black`
       }`}
     >
       {label}

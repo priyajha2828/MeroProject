@@ -1,5 +1,6 @@
+// App.jsx
+import React, { useState } from "react";
 import { Routes, Route, useNavigate } from "react-router-dom";
-import { useState } from "react";
 
 import Sidebar from "./components/Sidebar";
 import Topbar from "./components/Topbar";
@@ -19,6 +20,18 @@ import ExpenseInsights from "./components/ExpenseInsights";
 import SalesReturn from "./components/SalesReturn";
 import PurchaseReturn from "./components/PurchaseReturn";
 
+// New imports
+import { InventoryPage } from "./components/InventoryPage";
+import { PurchaseBillsPage } from "./components/PurchaseBillsPage";
+import { ImportPartiesPage } from "./components/ImportPartiesPage";
+import { ImportItemsPage } from "./components/ImportItemsPage";
+import { SalesInvoicePage } from "./components/SalesInvoicePage";
+import { PartiesPage } from "./components/PartiesPage";
+
+// ---------- NEW: Settings page (nested routes) ----------
+import SettingsPage from "./components/SettingsPage";
+// -------------------------------------------------------
+
 export default function App() {
   const navigate = useNavigate();
 
@@ -31,17 +44,13 @@ export default function App() {
 
   return (
     <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900">
-
-      {/* SIDEBAR */}
+      {/* Sidebar */}
       <Sidebar />
 
-      {/* RIGHT CONTENT AREA */}
+      {/* Right Content */}
       <div className="flex-1 flex flex-col">
-
-        {/* TOPBAR */}
         <Topbar onProfileClick={() => navigate("/complete-profile")} />
 
-        {/* MAIN CONTENT */}
         <main className="p-6">
           <Routes>
             <Route path="/" element={<Dashboard />} />
@@ -57,6 +66,32 @@ export default function App() {
             <Route path="/expense-insights" element={<ExpenseInsights />} />
             <Route path="/quick-pos" element={<QuickPOS />} />
             <Route path="/complete-profile" element={<CompleteProfile />} />
+
+            {/* Inventory route */}
+            <Route
+              path="/inventory"
+              element={<InventoryPage sidebarOpen={true} />}
+            />
+            <Route path="/sales-invoice" element={<SalesInvoicePage />} />
+            <Route path="/parties" element={<PartiesPage />} />
+
+            {/* New Pages */}
+            <Route
+              path="/purchase-bills"
+              element={<PurchaseBillsPage sidebarOpen={true} />}
+            />
+            <Route
+              path="/import-parties"
+              element={<ImportPartiesPage sidebarOpen={true} />}
+            />
+            <Route
+              path="/import-items"
+              element={<ImportItemsPage sidebarOpen={true} />}
+            />
+
+            {/* ---------- NEW: settings route (handles nested settings routes) ---------- */}
+            <Route path="/settings/*" element={<SettingsPage />} />
+            {/* -------------------------------------------------------------------------- */}
           </Routes>
         </main>
       </div>

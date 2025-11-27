@@ -1,4 +1,5 @@
-import { useState, useContext } from "react";
+// /mnt/data/Topbar.jsx
+import { useState, useContext, useMemo } from "react";
 import {
   Search,
   Bell,
@@ -7,17 +8,28 @@ import {
   Moon,
   Laptop,
   User,
-  LogOut
+  LogOut,
 } from "lucide-react";
 
-import { ThemeContext } from "../theme"; // ⬅ get theme + setTheme from context
+import { ThemeContext } from "../theme";
 
 export default function Topbar({ onProfileClick }) {
-  const { theme, setTheme } = useContext(ThemeContext); // ⬅ shared theme
+  const { theme, setTheme } = useContext(ThemeContext);
+
   const [showNotifications, setShowNotifications] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showThemeMenu, setShowThemeMenu] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+
+  const themeOptions = useMemo(
+    () => [
+      { label: "Light", value: "light", icon: <Sun size={16} /> },
+      { label: "Dark", value: "dark", icon: <Moon size={16} /> },
+      { label: "Classic", value: "classic", icon: <Laptop size={16} /> },
+      { label: "System Default", value: "system", icon: <Laptop size={16} /> },
+    ],
+    []
+  );
 
   const getThemeIcon = () => {
     switch (theme) {
@@ -25,28 +37,28 @@ export default function Topbar({ onProfileClick }) {
         return <Sun size={20} />;
       case "dark":
         return <Moon size={20} />;
-      case "classic":
-      case "system":
       default:
         return <Laptop size={20} />;
     }
   };
 
   return (
-    <header className="h-16 flex items-center justify-between px-6 border-b bg-white dark:bg-gray-900 transition-colors duration-300">
+    <header
+      className="h-16 flex items-center justify-between px-6 border-b
+                 bg-white dark:bg-black transition-colors duration-300"
+    >
+      {/* LEFT (spacer) */}
+      <div className="w-1/4" />
 
-      {/* LEFT EMPTY SPACE */}
-      <div className="w-1/4"></div>
-
-      {/* CENTER SEARCH */}
+      {/* CENTER: Search */}
       <div className="w-1/2 flex justify-center">
         <div className="relative w-full max-w-xl">
           <input
+            aria-label="Search"
             className="pl-10 pr-4 w-full py-2 rounded-lg border border-gray-300
-                      dark:border-gray-700 bg-white dark:bg-gray-800 
-                      text-gray-800 dark:text-gray-100 placeholder-gray-400 
-                      dark:placeholder-gray-400 focus:outline-none 
-                      focus:ring-2 focus:ring-emerald-500 transition-colors duration-300"
+                       dark:border-gray-700 bg-white dark:bg-gray-800
+                       text-gray-800 dark:text-gray-100 placeholder-gray-400
+                       focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors"
             placeholder="Search or create anything..."
           />
           <div className="absolute left-3 top-2 text-gray-400 dark:text-gray-300">
@@ -55,22 +67,26 @@ export default function Topbar({ onProfileClick }) {
         </div>
       </div>
 
-      {/* RIGHT SIDE ICONS */}
+      {/* RIGHT: Actions */}
       <div className="w-1/4 flex items-center gap-4 justify-end">
-
         {/* Shortcuts */}
         <div className="relative">
           <button
-            onClick={() => setShowShortcuts(!showShortcuts)}
-            className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
+            aria-haspopup="true"
+            aria-expanded={showShortcuts}
+            onClick={() => setShowShortcuts((s) => !s)}
+            className="p-2 rounded hover:bg-gray-100 dark:hover:bg-black"
+            title="Keyboard shortcuts"
           >
             <Keyboard size={20} />
           </button>
 
           {showShortcuts && (
-            <div className="absolute right-0 mt-2 w-48 p-2 bg-white dark:bg-gray-800 
-                            border border-gray-200 dark:border-gray-700 
-                            rounded shadow-lg z-50">
+            <div
+              className="absolute right-0 mt-2 w-48 p-2 bg-white dark:bg-black
+                         border border-gray-200 dark:border-gray-700 rounded shadow-lg z-50"
+              role="menu"
+            >
               <p className="text-sm dark:text-gray-100">Ctrl + S: Save</p>
               <p className="text-sm dark:text-gray-100">Ctrl + P: Print</p>
               <p className="text-sm dark:text-gray-100">Ctrl + F: Search</p>
@@ -81,98 +97,108 @@ export default function Topbar({ onProfileClick }) {
         {/* Notifications */}
         <div className="relative">
           <button
-            onClick={() => setShowNotifications(!showNotifications)}
-            className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 relative"
+            aria-haspopup="true"
+            aria-expanded={showNotifications}
+            onClick={() => setShowNotifications((s) => !s)}
+            className="p-2 rounded hover:bg-gray-100 dark:hover:bg-black relative"
+            title="Notifications"
           >
             <Bell size={20} />
-            <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
+            <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full" />
           </button>
 
           {showNotifications && (
-            <div className="absolute right-0 mt-2 w-56 p-2 bg-white dark:bg-gray-800 
-                            border border-gray-200 dark:border-gray-700 
-                            rounded shadow-lg z-50">
+            <div
+              className="absolute right-0 mt-2 w-56 p-2 bg-white dark:bg-black
+                         border border-gray-200 dark:border-gray-700 rounded shadow-lg z-50"
+              role="menu"
+            >
               <p className="text-sm dark:text-gray-100">New message from John</p>
               <p className="text-sm dark:text-gray-100">Server rebooted</p>
             </div>
           )}
         </div>
 
-        {/* THEME SWITCHER */}
+        {/* Theme switcher */}
         <div className="relative">
           <button
-            onClick={() => setShowThemeMenu(!showThemeMenu)}
-            className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
+            aria-haspopup="true"
+            aria-expanded={showThemeMenu}
+            onClick={() => setShowThemeMenu((s) => !s)}
+            className="p-2 rounded hover:bg-gray-100 dark:hover:bg-black"
+            title="Theme"
           >
             {getThemeIcon()}
           </button>
 
           {showThemeMenu && (
-            <div className="absolute right-0 mt-2 w-48 p-2 bg-white dark:bg-gray-800 
-                            border border-gray-200 dark:border-gray-700 
-                            rounded shadow-lg z-50">
-
-              {[
-                { label: "Light", value: "light", icon: <Sun size={16} /> },
-                { label: "Dark", value: "dark", icon: <Moon size={16} /> },
-                { label: "Classic", value: "classic", icon: <Laptop size={16} /> },
-                { label: "System Default", value: "system", icon: <Laptop size={16} /> }
-              ].map((item) => (
+            <div
+              className="absolute right-0 mt-2 w-48 p-2 bg-white dark:bg-black
+                         border border-gray-200 dark:border-gray-700 rounded shadow-lg z-50"
+              role="menu"
+            >
+              {themeOptions.map((opt) => (
                 <button
-                  key={item.value}
+                  key={opt.value}
                   onClick={() => {
-                    setTheme(item.value);
+                    setTheme(opt.value);
                     setShowThemeMenu(false);
                   }}
-                  className="flex items-center gap-2 w-full px-2 py-1 rounded 
-                             hover:bg-gray-100 dark:hover:bg-gray-700 
-                             text-sm dark:text-gray-100"
+                  className="flex items-center gap-2 w-full px-2 py-1 rounded
+                             hover:bg-gray-100 dark:hover:bg-gray-900 text-sm
+                             text-gray-800 dark:text-gray-100"
+                  role="menuitem"
                 >
-                  {item.icon} {item.label}
+                  {opt.icon}
+                  <span>{opt.label}</span>
                 </button>
               ))}
             </div>
           )}
         </div>
 
-        {/* PROFILE MENU */}
+        {/* Profile */}
         <div className="relative">
           <button
-            onClick={() => setShowProfileMenu(!showProfileMenu)}
-            className="w-8 h-8 rounded-full bg-emerald-500 text-white 
-                       flex items-center justify-center hover:bg-emerald-600"
+            onClick={() => setShowProfileMenu((s) => !s)}
+            className="w-8 h-8 rounded-full bg-[#172554] text-white flex items-center justify-center
+                       hover:bg-[#111A31]"
+            aria-haspopup="true"
+            aria-expanded={showProfileMenu}
+            title="Profile"
           >
             RA
           </button>
 
           {showProfileMenu && (
-            <div className="absolute right-0 mt-2 w-40 bg-white dark:bg-gray-800 
-                            border border-gray-200 dark:border-gray-700 
-                            rounded-xl shadow-lg z-50">
-
+            <div
+              className="absolute right-0 mt-2 w-40 bg-white dark:bg-black
+                         border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50"
+              role="menu"
+            >
               <button
                 onClick={() => {
                   setShowProfileMenu(false);
                   onProfileClick && onProfileClick();
                 }}
-                className="flex items-center gap-2 w-full px-4 py-2 
-                           hover:bg-gray-100 dark:hover:bg-gray-700 rounded-t-xl"
+                className="flex items-center gap-2 w-full px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-t-xl"
+                role="menuitem"
               >
                 <User size={16} /> My Profile
               </button>
 
-              <button
-                onClick={() => console.log("Logout")}
-                className="flex items-center gap-2 w-full px-4 py-2 
-                           hover:bg-gray-100 dark:hover:bg-gray-700 rounded-b-xl"
-              >
-                <LogOut size={16} /> Logout
-              </button>
+              <div className="border-t border-gray-200 dark:border-gray-700 my-1" />
 
+              <button
+  onClick={() => console.log("Logout")}
+  className="flex items-center gap-2 w-full px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-b-xl text-red-500"
+  role="menuitem"
+>
+  <LogOut size={16} /> Logout
+</button>
             </div>
           )}
         </div>
-
       </div>
     </header>
   );
