@@ -66,6 +66,8 @@ export default function App() {
             <Route path="/expense-insights" element={<ExpenseInsights />} />
             <Route path="/quick-pos" element={<QuickPOS />} />
             <Route path="/complete-profile" element={<CompleteProfile />} />
+            <Route path="/settings/*" element={<SettingsPage />} />
+
 
             {/* Inventory route */}
             <Route

@@ -87,7 +87,7 @@ export default function Dashboard() {
             {showAddMore && (
               <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-xl shadow-lg z-50">
                 <button
-                  onClick={() => navigate("/PaymentInPage.jsx")}
+                  onClick={() => navigate("/payment-in")}
                   className="flex items-center gap-2 w-full px-4 py-2 hover:bg-gray-100 rounded-t-xl"
                 >
                   <DollarSign size={16} /> Payment In
