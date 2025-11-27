@@ -51,51 +51,36 @@ export default function App() {
       <div className="flex-1 flex flex-col">
         <Topbar onProfileClick={() => navigate("/complete-profile")} />
 
-        <main className="p-6">
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/add-sales" element={<AddSales />} />
-            <Route path="/add-purchase" element={<AddPurchase />} />
-            <Route path="/payment-in" element={<PaymentInForm />} />
-            <Route path="/payment-out" element={<PaymentOutForm />} />
-            <Route path="/quotation" element={<Quotation />} />
-            <Route path="/sales-return" element={<SalesReturn />} />
-            <Route path="/purchase-return" element={<PurchaseReturn />} />
-            <Route path="/sale-insights" element={<SaleInsights />} />
-            <Route path="/purchase-insights" element={<PurchaseInsights />} />
-            <Route path="/expense-insights" element={<ExpenseInsights />} />
-            <Route path="/quick-pos" element={<QuickPOS />} />
-            <Route path="/complete-profile" element={<CompleteProfile />} />
-            <Route path="/settings/*" element={<SettingsPage />} />
+        // App.jsx (replace your Routes block with this snippet)
+<main className="p-6">
+  <Routes>
+    <Route path="/" element={<Dashboard />} />
+    <Route path="/add-sales" element={<AddSales />} />
+    <Route path="/add-purchase" element={<AddPurchase />} />
+    <Route path="/payment-in" element={<PaymentInForm />} />
+    <Route path="/payment-out" element={<PaymentOutForm />} />
+    <Route path="/quotation" element={<Quotation />} />
+    <Route path="/sales-return" element={<SalesReturn />} />
+    <Route path="/purchase-return" element={<PurchaseReturn />} />
+    <Route path="/sale-insights" element={<SaleInsights />} />
+    <Route path="/purchase-insights" element={<PurchaseInsights />} />
+    <Route path="/expense-insights" element={<ExpenseInsights />} />
+    <Route path="/quick-pos" element={<QuickPOS />} />
+    <Route path="/complete-profile" element={<CompleteProfile />} />
 
+    {/* Inventory route */}
+    <Route path="/inventory" element={<InventoryPage sidebarOpen={true} />} />
+    <Route path="/sales-invoice" element={<SalesInvoicePage />} />
+    <Route path="/parties" element={<PartiesPage />} />
+    <Route path="/purchase-bills" element={<PurchaseBillsPage sidebarOpen={true} />} />
+    <Route path="/import-parties" element={<ImportPartiesPage sidebarOpen={true} />} />
+    <Route path="/import-items" element={<ImportItemsPage sidebarOpen={true} />} />
 
-            {/* Inventory route */}
-            <Route
-              path="/inventory"
-              element={<InventoryPage sidebarOpen={true} />}
-            />
-            <Route path="/sales-invoice" element={<SalesInvoicePage />} />
-            <Route path="/parties" element={<PartiesPage />} />
+    {/* single settings route (nested routes live inside SettingsPage) */}
+    <Route path="/settings/*" element={<SettingsPage />} />
+  </Routes>
+</main>
 
-            {/* New Pages */}
-            <Route
-              path="/purchase-bills"
-              element={<PurchaseBillsPage sidebarOpen={true} />}
-            />
-            <Route
-              path="/import-parties"
-              element={<ImportPartiesPage sidebarOpen={true} />}
-            />
-            <Route
-              path="/import-items"
-              element={<ImportItemsPage sidebarOpen={true} />}
-            />
-
-            {/* ---------- NEW: settings route (handles nested settings routes) ---------- */}
-            <Route path="/settings/*" element={<SettingsPage />} />
-            {/* -------------------------------------------------------------------------- */}
-          </Routes>
-        </main>
       </div>
 
       {showReminder && (

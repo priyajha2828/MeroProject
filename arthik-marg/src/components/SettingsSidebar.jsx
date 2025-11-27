@@ -10,6 +10,7 @@ import {
   Bell,
   Menu,
   ChevronRight,
+  Building
 } from "lucide-react";
 
 const CUSTOM_BLUE = "bg-[#172554]";
@@ -31,13 +32,13 @@ export default function SettingsSidebar({ collapsed: collapsedProp = false }) {
   const active = location.pathname.split("/").filter(Boolean).pop() || "general";
 
   const items = [
-    { id: "general", label: "General", icon: <Settings size={16} /> },
-    { id: "account", label: "Account", icon: <User size={16} /> },
-    { id: "security", label: "Security", icon: <Lock size={16} /> },
-    { id: "localization", label: "Localization", icon: <Globe size={16} /> },
-    { id: "notifications", label: "Notifications", icon: <Bell size={16} /> },
-  ];
-
+  { id: "general", label: "General", icon: <Settings size={16} /> },
+  { id: "account", label: "Account", icon: <User size={16} /> },
+  { id: "business-profile", label: "Business Profile", icon: <Building size={16} /> },
+  { id: "security", label: "Security", icon: <Lock size={16} /> },
+  { id: "localization", label: "Localization", icon: <Globe size={16} /> },
+  { id: "notifications", label: "Notifications", icon: <Bell size={16} /> },
+];
   const handleBack = () => {
     if (window.history.length > 1) navigate(-1);
     else navigate("/");

@@ -1,7 +1,9 @@
 // SettingsPage.jsx
 import React, { useState } from "react";
 import SettingsSidebar from "./SettingsSidebar"; // your sidebar (already navigates to /settings/account)
-import SettingAccount from "./SettingAccount";   // the real account page you uploaded
+import SettingAccount from "./SettingAccount"; 
+import SettingBusinessProfile from "./SettingBusinessProfile";
+  // the real account page you uploaded
 import { Routes, Route, Navigate } from "react-router-dom";
 
 function GeneralSettings() {
@@ -42,7 +44,7 @@ export default function SettingsPage() {
           {/* <-- Use your actual SettingAccount component here */}
           <Route path="account" element={<SettingAccount />} />
           <Route path="security" element={<SecuritySettings />} />
-
+         <Route path="business-profile" element={<SettingBusinessProfile />} />
           {/* fallback -> go to /settings */}
           <Route path="*" element={<Navigate to="/settings" replace />} />
         </Routes>
