@@ -1,4 +1,4 @@
-// App.jsx
+// src/App.jsx
 import React, { useState } from "react";
 import { Routes, Route, useNavigate } from "react-router-dom";
 
@@ -28,6 +28,15 @@ import { ImportPartiesPage } from "./components/ImportPartiesPage";
 import { ImportItemsPage } from "./components/ImportItemsPage";
 import { InventoryPage } from "./components/InventoryPage";
 import { PartiesPage } from "./components/PartiesPage";
+import CashReportPage from "./components/CashReportPage";
+
+
+// Expense & Other Income pages
+import { OtherIncomePage } from "./components/OtherIncomePage";
+import { ExpensePage } from "./components/ExpensePage";
+
+// Manage Accounts page
+import ManageAccountsPage from "./components/ManageAccountsPage";
 
 // Settings (nested)
 import SettingsPage from "./components/SettingsPage";
@@ -37,7 +46,6 @@ export default function App() {
   const [reminders, setReminders] = useState([]);
   const [showReminder, setShowReminder] = useState(false);
 
-  // control sidebar open/collapsed state globally
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const handleSaveReminder = (reminder) => {
@@ -46,12 +54,9 @@ export default function App() {
 
   return (
     <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* SIDEBAR */}
       <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
-      {/* Right Content */}
       <div className="flex-1 flex flex-col">
-        {/* TOPBAR */}
         <Topbar
           onProfileClick={() => navigate("/complete-profile")}
           sidebarOpen={sidebarOpen}
@@ -60,7 +65,6 @@ export default function App() {
 
         <main className="p-6">
           <Routes>
-            {/* Core routes */}
             <Route path="/" element={<Dashboard sidebarOpen={sidebarOpen} />} />
             <Route path="/add-sales" element={<AddSales sidebarOpen={sidebarOpen} />} />
             <Route path="/add-purchase" element={<AddPurchase sidebarOpen={sidebarOpen} />} />
@@ -75,26 +79,26 @@ export default function App() {
             <Route path="/quick-pos" element={<QuickPOS sidebarOpen={sidebarOpen} />} />
             <Route path="/complete-profile" element={<CompleteProfile sidebarOpen={sidebarOpen} />} />
 
-            {/* Pages introduced earlier */}
             <Route path="/sales-invoice" element={<SalesInvoicePage sidebarOpen={sidebarOpen} />} />
             <Route path="/purchase-bills" element={<PurchaseBillsPage sidebarOpen={sidebarOpen} />} />
             <Route path="/import-parties" element={<ImportPartiesPage sidebarOpen={sidebarOpen} />} />
             <Route path="/import-items" element={<ImportItemsPage sidebarOpen={sidebarOpen} />} />
             <Route path="/inventory" element={<InventoryPage sidebarOpen={sidebarOpen} />} />
             <Route path="/parties" element={<PartiesPage sidebarOpen={sidebarOpen} />} />
+            <Route path="/cash-report/:accountId" element={<CashReportPage />} />
 
-            {/* Settings (nested routes handled by SettingsPage) */}
+            {/* pages we added */}
+            <Route path="/expense" element={<ExpensePage sidebarOpen={sidebarOpen} />} />
+            <Route path="/other-income" element={<OtherIncomePage sidebarOpen={sidebarOpen} />} />
+            <Route path="/accounts" element={<ManageAccountsPage sidebarOpen={sidebarOpen} />} />
+
             <Route path="/settings/*" element={<SettingsPage sidebarOpen={sidebarOpen} />} />
           </Routes>
         </main>
       </div>
 
-      {/* Reminder popup */}
       {showReminder && (
-        <AddReminder
-          onClose={() => setShowReminder(false)}
-          onSave={handleSaveReminder}
-        />
+        <AddReminder onClose={() => setShowReminder(false)} onSave={handleSaveReminder} />
       )}
     </div>
   );
