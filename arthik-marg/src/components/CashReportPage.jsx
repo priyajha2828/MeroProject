@@ -1,5 +1,5 @@
 // src/pages/CashReportPage.jsx
-import React, { useRef, useMemo, useState } from "react";
+import React, { useRef, useMemo, useState, useEffect } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import * as XLSX from "xlsx";
 import Calendar from "@sbmdkl/nepali-datepicker-reactjs";
@@ -96,6 +96,30 @@ const keyForRange = (range) => {
   return null;
 };
 
+/* ---------- month-grid calendar helpers (copied/adapted from ManageAccountsPage.jsx) ---------- */
+function getMonthMatrix(year, month) {
+  const first = new Date(year, month, 1);
+  const last = new Date(year, month + 1, 0);
+  const startWeekDay = first.getDay();
+  const totalDays = last.getDate();
+
+  const weeks = [];
+  let week = new Array(startWeekDay).fill(null);
+
+  for (let d = 1; d <= totalDays; d++) {
+    week.push(new Date(year, month, d));
+    if (week.length === 7) {
+      weeks.push(week);
+      week = [];
+    }
+  }
+  if (week.length > 0) {
+    while (week.length < 7) week.push(null);
+    weeks.push(week);
+  }
+  return weeks;
+}
+
 /* ---------- Component ---------- */
 export default function CashReportPage() {
   const navigate = useNavigate();
@@ -118,16 +142,59 @@ export default function CashReportPage() {
   const [tempRange, setTempRange] = useState({ start: null, end: null });
   const [tempRangeBs, setTempRangeBs] = useState({ start: "", end: "" });
   const [tempQuickKey, setTempQuickKey] = useState(null);
+
+  // small inline calendar toggles (still kept for optional use)
   const [showStartInlineCal, setShowStartInlineCal] = useState(false);
   const [showEndInlineCal, setShowEndInlineCal] = useState(false);
 
-  // Open picker preloads current applied range/bs
+  // fixed picker positioning refs
+  const pickerButtonRef = useRef(null);
+  const pickerRef = useRef(null);
+  const [pickerPos, setPickerPos] = useState({ top: 0, left: 0, width: 780 });
+
+  // month-grid calendar view state (for big calendar on right)
+  const [viewYear, setViewYear] = useState(() => new Date().getFullYear());
+  const [viewMonth, setViewMonth] = useState(() => new Date().getMonth());
+  const weeks = useMemo(() => getMonthMatrix(viewYear, viewMonth), [viewYear, viewMonth]);
+
+  useEffect(() => {
+    // when picker opens, set calendar to the month containing the start (or today)
+    if (!showPicker) return;
+    const d = tempRange.start ? new Date(tempRange.start) : new Date();
+    setViewYear(d.getFullYear());
+    setViewMonth(d.getMonth());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showPicker]);
+
+  // compute fixed popover position when opening (keeps popover visible)
   const openPicker = () => {
     setTempRange({ start: filterRange.start, end: filterRange.end });
     setTempQuickKey(keyForRange(filterRange));
     setTempRangeBs({ start: appliedRangeBs.start || "", end: appliedRangeBs.end || "" });
     setShowStartInlineCal(false);
     setShowEndInlineCal(false);
+
+    const btn = pickerButtonRef.current && pickerButtonRef.current.getBoundingClientRect();
+    const popW = 780;
+    const popH = 420; // approximate height
+    const scrollX = window.scrollX || window.pageXOffset || 0;
+    const scrollY = window.scrollY || window.pageYOffset || 0;
+
+    let left = scrollX + (btn ? btn.left : Math.max(8, (window.innerWidth - popW) / 2));
+    // ensure not overflow right
+    if (left + popW > scrollX + window.innerWidth - 12) {
+      left = scrollX + window.innerWidth - popW - 12;
+    }
+    if (left < scrollX + 8) left = scrollX + 8;
+
+    let top = scrollY + (btn ? btn.bottom : Math.max(80, (window.innerHeight - popH) / 2));
+    // if would overflow bottom, show above the button
+    if (top + popH > scrollY + window.innerHeight - 12 && btn) {
+      top = scrollY + btn.top - popH - 8;
+    }
+    if (top < scrollY + 8) top = scrollY + 8;
+
+    setPickerPos({ top, left, width: popW });
     setShowPicker(true);
   };
 
@@ -138,6 +205,11 @@ export default function CashReportPage() {
     setTempRangeBs({ start: "", end: "" });
     setShowStartInlineCal(false);
     setShowEndInlineCal(false);
+
+    // show month of start (or today) in big calendar
+    const d = s ? new Date(s) : new Date();
+    setViewYear(d.getFullYear());
+    setViewMonth(d.getMonth());
   };
 
   const applyPicker = () => {
@@ -237,7 +309,7 @@ export default function CashReportPage() {
     XLSX.writeFile(workbook, `Cash_Report${accountId ? `_${accountId}` : ""}.xlsx`);
   }
 
-  /* ---------- Printing via hidden iframe (robust) ---------- */
+  /* ---------- Printing via hidden iframe (unchanged) ---------- */
   const buildPrintableHtml = () => {
     const companyName = "Something";
     const companyPhone = "9820318653";
@@ -453,6 +525,82 @@ export default function CashReportPage() {
     </svg>
   );
 
+  // Close fixed picker when clicking outside (pickerRef and button)
+  useEffect(() => {
+    function onDocDown(e) {
+      if (!showPicker) return;
+      if (pickerRef.current && pickerRef.current.contains(e.target)) return;
+      if (pickerButtonRef.current && pickerButtonRef.current.contains(e.target)) return;
+      setShowPicker(false);
+      setShowStartInlineCal(false);
+      setShowEndInlineCal(false);
+    }
+    document.addEventListener("mousedown", onDocDown);
+    return () => document.removeEventListener("mousedown", onDocDown);
+  }, [showPicker]);
+
+  // ---------- big calendar click handler & range helpers ----------
+  const dayKey = (d) => {
+    if (!d) return null;
+    return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+  };
+
+  const isSameDay = (a, b) => {
+    if (!a || !b) return false;
+    return dayKey(a) === dayKey(b);
+  };
+
+  const inRange = (day, start, end) => {
+    if (!day || !start || !end) return false;
+    const t = day.setHours(0, 0, 0, 0);
+    const s = new Date(start).setHours(0, 0, 0, 0);
+    const e = new Date(end).setHours(0, 0, 0, 0);
+    return t >= s && t <= e;
+  };
+
+  const handleBigCalDayClick = (day) => {
+    if (!day) return;
+    // pick start then end
+    if (!tempRange.start || (tempRange.start && tempRange.end)) {
+      setTempRange({ start: startOfDay(day), end: null });
+      setTempRangeBs({ start: "", end: "" });
+      setTempQuickKey(null);
+    } else if (tempRange.start && !tempRange.end) {
+      const a = startOfDay(tempRange.start);
+      const b = startOfDay(day);
+      if (b.getTime() < a.getTime()) {
+        // if clicked before start, treat as new start
+        setTempRange({ start: startOfDay(day), end: null });
+      } else {
+        setTempRange({ start: a, end: endOfDay(b) });
+      }
+      setTempRangeBs({ start: "", end: "" });
+      setTempQuickKey(null);
+    }
+  };
+
+  const prevMonth = () => {
+    let y = viewYear;
+    let m = viewMonth - 1;
+    if (m < 0) {
+      m = 11;
+      y -= 1;
+    }
+    setViewYear(y);
+    setViewMonth(m);
+  };
+  const nextMonth = () => {
+    let y = viewYear;
+    let m = viewMonth + 1;
+    if (m > 11) {
+      m = 0;
+      y += 1;
+    }
+    setViewYear(y);
+    setViewMonth(m);
+  };
+
+  // ---------- RENDER ----------
   return (
     <div className="p-8 max-w-7xl mx-auto relative">
       {/* header & controls */}
@@ -478,15 +626,30 @@ export default function CashReportPage() {
 
             {/* Date range button that opens picker */}
             <div className="relative">
-              <button onClick={openPicker} className="px-4 py-2 rounded-lg border bg-white text-gray-700">
+              <button
+                ref={pickerButtonRef}
+                onClick={() => {
+                  if (!showPicker) openPicker();
+                  else setShowPicker(false);
+                }}
+                className="px-4 py-2 rounded-lg border bg-white text-gray-700"
+              >
                 {selectedRangeLabel()}
               </button>
 
+              {/* FIXED position picker (two-column UI like screenshot) */}
               {showPicker && (
                 <div
-                  className="absolute z-50 mt-2 w-[780px] bg-white border rounded-lg shadow-lg p-4 grid grid-cols-[200px_1fr] gap-4"
-                  style={{ right: 0 }}
+                  ref={pickerRef}
+                  className="fixed z-50 bg-white border rounded-lg shadow-lg p-4 grid grid-cols-[200px_1fr] gap-4"
+                  style={{
+                    top: pickerPos.top,
+                    left: pickerPos.left,
+                    width: pickerPos.width,
+                    maxWidth: "calc(100% - 24px)",
+                  }}
                 >
+                  {/* LEFT: quick ranges */}
                   <div className="border-r pr-3">
                     <ul className="text-sm space-y-2">
                       {[
@@ -523,79 +686,76 @@ export default function CashReportPage() {
                     </ul>
                   </div>
 
+                  {/* RIGHT: big month-grid calendar + start/end pills + preview + footer */}
                   <div>
-                    {/* Start / End BS boxes + inline calendars */}
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <div className="text-xs text-gray-500">Start</div>
-                          <div
-                            role="button"
-                            tabIndex={0}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setShowStartInlineCal((s) => !s);
-                              setShowEndInlineCal(false);
-                            }}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") {
-                                setShowStartInlineCal((s) => !s);
-                                setShowEndInlineCal(false);
-                              }
-                            }}
-                            className="px-3 py-2 border rounded-md bg-white text-sm w-full cursor-pointer"
-                          >
-                            {tempRangeBs.start ||
-                              (tempQuickKey && labelForKey[tempQuickKey] !== "All Date" ? labelForKey[tempQuickKey] : "—") ||
-                              "—"}
-                          </div>
-                        </div>
-
-                        {showStartInlineCal && (
-                          <div className="mt-2 p-3 border rounded bg-white shadow-sm" onClick={(e) => e.stopPropagation()}>
-                            <Calendar onChange={({ bsDate, adDate }) => onStartInlineCalChange({ bsDate, adDate })} language="ne" defaultDate={tempRange.start ? formatAD(tempRange.start) : ""} />
-                          </div>
-                        )}
+                    {/* Top row: BS start pill, arrow, BS end pill */}
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="inline-flex items-center gap-2 px-3 py-2 border rounded-md bg-white text-sm w-40 justify-center">
+                        {tempRangeBs.start || (tempRange.start ? formatAD(tempRange.start) : "—")}
                       </div>
-
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <div className="text-xs text-gray-500">End</div>
-                          <div
-                            role="button"
-                            tabIndex={0}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setShowEndInlineCal((s) => !s);
-                              setShowStartInlineCal(false);
-                            }}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") {
-                                setShowEndInlineCal((s) => !s);
-                                setShowStartInlineCal(false);
-                              }
-                            }}
-                            className="px-3 py-2 border rounded-md bg-white text-sm w-full cursor-pointer"
-                          >
-                            {tempRangeBs.end ||
-                              (tempQuickKey && labelForKey[tempQuickKey] !== "All Date" ? labelForKey[tempQuickKey] : "—") ||
-                              "—"}
-                          </div>
-                        </div>
-
-                        {showEndInlineCal && (
-                          <div className="mt-2 p-3 border rounded bg-white shadow-sm" onClick={(e) => e.stopPropagation()}>
-                            <Calendar onChange={({ bsDate, adDate }) => onEndInlineCalChange({ bsDate, adDate })} language="ne" defaultDate={tempRange.end ? formatAD(tempRange.end) : ""} />
-                          </div>
-                        )}
+                      <div className="text-sm text-gray-400">→</div>
+                      <div className="inline-flex items-center gap-2 px-3 py-2 border rounded-md bg-white text-sm w-40 justify-center">
+                        {tempRangeBs.end || (tempRange.end ? formatAD(tempRange.end) : "—")}
                       </div>
                     </div>
 
+                    {/* Month header */}
                     <div className="mb-3">
-                      <div className="text-xs text-gray-500 mb-1">Preview</div>
-                      <div className="p-3 bg-gray-50 rounded text-sm">{tempRange.start && tempRange.end ? `${formatAD(tempRange.start)} → ${formatAD(tempRange.end)}` : "All Date"}</div>
+                      <div className="flex items-center justify-between px-2">
+                        <button onClick={prevMonth} className="p-1 rounded hover:bg-gray-100">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="#374151" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                        </button>
+
+                        <div className="text-sm font-medium">
+                          {new Date(viewYear, viewMonth, 1).toLocaleString(undefined, { month: "long", year: "numeric" })}
+                        </div>
+
+                        <button onClick={nextMonth} className="p-1 rounded hover:bg-gray-100">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="#374151" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                        </button>
+                      </div>
                     </div>
 
+                    {/* Weekday headers */}
+                    <div className="grid grid-cols-7 gap-1 text-[11px] text-gray-500 mb-2">
+                      {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
+                        <div key={d} className="text-center py-1">{d}</div>
+                      ))}
+                    </div>
+
+                    {/* Calendar grid */}
+                    <div className="grid grid-cols-7 gap-1">
+                      {weeks.map((week, wi) =>
+                        week.map((day, di) => {
+                          const isDisabled = !day;
+                          const isStart = day && tempRange.start && isSameDay(day, new Date(tempRange.start));
+                          const isEnd = day && tempRange.end && isSameDay(day, new Date(tempRange.end));
+                          const isBetween = day && tempRange.start && tempRange.end && inRange(day, tempRange.start, tempRange.end);
+                          return (
+                            <button
+                              key={`${wi}-${di}`}
+                              onClick={() => handleBigCalDayClick(day)}
+                              disabled={isDisabled}
+                              className={`h-10 flex items-center justify-center text-sm rounded ${isDisabled ? "text-gray-300 cursor-default" : "cursor-pointer hover:bg-gray-100"} ${
+                                isStart || isEnd ? "bg-emerald-600 text-white" : ""
+                              } ${isBetween && !(isStart || isEnd) ? "bg-emerald-100 text-emerald-800" : ""}`}
+                            >
+                              {day ? day.getDate() : ""}
+                            </button>
+                          );
+                        })
+                      )}
+                    </div>
+
+                    {/* Preview */}
+                    <div className="mt-4 mb-3">
+                      <div className="text-xs text-gray-500 mb-1">Preview</div>
+                      <div className="p-3 bg-gray-50 rounded text-sm">
+                        {tempRange.start && tempRange.end ? `${formatAD(tempRange.start)} → ${formatAD(tempRange.end)}` : "All Date"}
+                      </div>
+                    </div>
+
+                    {/* Footer: Cancel / Apply */}
                     <div className="flex items-center justify-end gap-2">
                       <button onClick={cancelPicker} className="px-3 py-2 rounded border text-sm text-gray-600">Cancel</button>
                       <button onClick={applyPicker} className="px-3 py-2 rounded bg-green-600 text-white text-sm">Apply</button>

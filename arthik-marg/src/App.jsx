@@ -29,11 +29,15 @@ import { ImportItemsPage } from "./components/ImportItemsPage";
 import { InventoryPage } from "./components/InventoryPage";
 import { PartiesPage } from "./components/PartiesPage";
 import CashReportPage from "./components/CashReportPage";
+import ReportsGallery from "./components/ReportsGallery";
+import ReportsPage from "./components/ReportsPage";
 
 
 // Expense & Other Income pages
 import { OtherIncomePage } from "./components/OtherIncomePage";
 import { ExpensePage } from "./components/ExpensePage";
+import ManageStaffsPage from "./components/ManageStaffsPage";
+
 
 // Manage Accounts page
 import ManageAccountsPage from "./components/ManageAccountsPage";
@@ -53,7 +57,8 @@ export default function App() {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900">
+    // make app full height and prevent body scrolling; only main will scroll
+    <div className="flex h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden">
       <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
       <div className="flex-1 flex flex-col">
@@ -63,7 +68,8 @@ export default function App() {
           setSidebarOpen={setSidebarOpen}
         />
 
-        <main className="p-6">
+        {/* main takes remaining space and is the only scrollable area */}
+        <main className="p-6 flex-1 overflow-auto">
           <Routes>
             <Route path="/" element={<Dashboard sidebarOpen={sidebarOpen} />} />
             <Route path="/add-sales" element={<AddSales sidebarOpen={sidebarOpen} />} />
@@ -86,6 +92,8 @@ export default function App() {
             <Route path="/inventory" element={<InventoryPage sidebarOpen={sidebarOpen} />} />
             <Route path="/parties" element={<PartiesPage sidebarOpen={sidebarOpen} />} />
             <Route path="/cash-report/:accountId" element={<CashReportPage />} />
+            <Route path="/reports/:reportId" element={<ReportsPage />} />
+
 
             {/* pages we added */}
             <Route path="/expense" element={<ExpensePage sidebarOpen={sidebarOpen} />} />
@@ -93,6 +101,9 @@ export default function App() {
             <Route path="/accounts" element={<ManageAccountsPage sidebarOpen={sidebarOpen} />} />
 
             <Route path="/settings/*" element={<SettingsPage sidebarOpen={sidebarOpen} />} />
+            <Route path="/reports" element={<ReportsGallery sidebarOpen={sidebarOpen} />} />
+            <Route path="/manage-staffs" element={<ManageStaffsPage sidebarOpen={sidebarOpen} />} />
+
           </Routes>
         </main>
       </div>

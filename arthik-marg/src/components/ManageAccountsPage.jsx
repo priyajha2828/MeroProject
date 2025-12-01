@@ -1,6 +1,6 @@
 // src/components/ManageAccountsPage.jsx
-import React, { useState, useEffect, useRef } from "react";
-import { Plus, Wallet, X, Camera, Minus } from "lucide-react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
+import { Plus, Wallet, X, Camera, Minus, Calendar as CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export default function ManageAccountsPage({ sidebarOpen }) {
@@ -17,21 +17,18 @@ export default function ManageAccountsPage({ sidebarOpen }) {
   // sample accounts
   const [accounts, setAccounts] = useState([
     { id: "cash", name: "Cash", balance: 0, icon: "cash", type: "Cash" },
-    // add other accounts here if you want to test multiple accounts
   ]);
   const [selectedAccountId, setSelectedAccountId] = useState(null);
   const [showAdd, setShowAdd] = useState(false);
 
-  // Adjust flow: small menu + modal
   const [showAdjustMenu, setShowAdjustMenu] = useState(false);
   const [adjustMenuPos, setAdjustMenuPos] = useState({ top: 0, left: 0 });
   const adjustMenuRef = useRef(null);
   const adjustButtonRef = useRef(null);
 
-  // adjust modal state (includes attachments + date + account selection)
   const [showAdjust, setShowAdjust] = useState(false);
   const [adjust, setAdjust] = useState({
-    type: "increase", // "increase" or "decrease"
+    type: "increase",
     amount: "",
     reason: "",
     date: new Date().toISOString().slice(0, 10), // YYYY-MM-DD
@@ -39,12 +36,10 @@ export default function ManageAccountsPage({ sidebarOpen }) {
     attachments: [],
   });
 
-  // report / transactions state
   const [reportData, setReportData] = useState([]);
 
   const totalBalance = accounts.reduce((s, a) => s + (Number(a.balance) || 0), 0);
 
-  // new account form state
   const [newAccount, setNewAccount] = useState({
     type: "Bank Account",
     bankName: "",
@@ -105,12 +100,11 @@ export default function ManageAccountsPage({ sidebarOpen }) {
     setShowAdd(false);
   }
 
-  // open small menu and compute position from button rect
   function openAdjustMenu(e) {
     e?.stopPropagation?.();
     const rect = adjustButtonRef.current?.getBoundingClientRect?.();
     if (rect) {
-      const menuWidth = 176; // approx for w-44
+      const menuWidth = 176;
       const left = Math.max(8 + window.scrollX, rect.right - menuWidth);
       const top = rect.bottom + 8 + window.scrollY;
       setAdjustMenuPos({ top, left });
@@ -120,11 +114,9 @@ export default function ManageAccountsPage({ sidebarOpen }) {
     setShowAdjustMenu(true);
   }
 
-  // handle selection from the small menu
   function handleAdjustMenuSelect(mode) {
     setShowAdjustMenu(false);
     if (mode === "transfer") {
-      // placeholder: implement transfer flow later if needed
       alert("Transfer Money clicked — implement transfer flow here.");
       return;
     }
@@ -140,7 +132,6 @@ export default function ManageAccountsPage({ sidebarOpen }) {
     setShowAdjust(true);
   }
 
-  // close small menu on outside click
   useEffect(() => {
     function onDocClick(e) {
       if (!showAdjustMenu) return;
@@ -165,7 +156,6 @@ export default function ManageAccountsPage({ sidebarOpen }) {
     }
   }
 
-  // apply adjustment: update account balance and add report entry
   function applyAdjust() {
     const amt = parseFloat(String(adjust.amount).replace(/,/g, "")) || 0;
     if (!amt) {
@@ -179,18 +169,15 @@ export default function ManageAccountsPage({ sidebarOpen }) {
       return;
     }
 
-    // compute new accounts array
     const newAccounts = accounts.map((acc) => {
       if (acc.id !== acctId) return acc;
       const newBalValue = adjust.type === "increase" ? Number(acc.balance || 0) + amt : Number(acc.balance || 0) - amt;
       return { ...acc, balance: Number(newBalValue.toFixed(2)) };
     });
 
-    // find updated account to obtain new balance for report entry
     const updatedAcc = newAccounts.find((a) => a.id === acctId);
     const newBalanceForReport = updatedAcc ? Number(updatedAcc.balance) : 0;
 
-    // create report entry
     const entry = {
       date: adjust.date,
       type: adjust.type === "increase" ? "Add Money" : "Reduce Money",
@@ -201,7 +188,6 @@ export default function ManageAccountsPage({ sidebarOpen }) {
       accountId: acctId,
     };
 
-    // update state
     setAccounts(newAccounts);
     setReportData((prev) => [...prev, entry]);
     setShowAdjust(false);
@@ -209,7 +195,126 @@ export default function ManageAccountsPage({ sidebarOpen }) {
 
   const selectedAccount = accounts.find((a) => a.id === selectedAccountId);
 
-  // ---------- CASH DETAILS VIEW ----------
+  // ------------------ calendar helpers for adjust modal ------------------
+  const startOfDay = (d) => {
+    const x = new Date(d);
+    x.setHours(0, 0, 0, 0);
+    return x;
+  };
+  const toInputDate = (d) => {
+    if (!d) return "";
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  };
+  function getMonthMatrix(year, month) {
+    const first = new Date(year, month, 1);
+    const last = new Date(year, month + 1, 0);
+    const startWeekDay = first.getDay();
+    const totalDays = last.getDate();
+
+    const weeks = [];
+    let week = new Array(startWeekDay).fill(null);
+
+    for (let d = 1; d <= totalDays; d++) {
+      week.push(new Date(year, month, d));
+      if (week.length === 7) {
+        weeks.push(week);
+        week = [];
+      }
+    }
+    if (week.length > 0) {
+      while (week.length < 7) week.push(null);
+      weeks.push(week);
+    }
+    return weeks;
+  }
+
+  // calendar state for adjust modal date picker
+  const [calOpen, setCalOpen] = useState(false);
+  const calRef = useRef(null);
+  const calBtnRef = useRef(null);
+  const [viewYear, setViewYear] = useState(() => new Date().getFullYear());
+  const [viewMonth, setViewMonth] = useState(() => new Date().getMonth());
+  const weeks = useMemo(() => getMonthMatrix(viewYear, viewMonth), [viewYear, viewMonth]);
+
+  // NEW: fixed-position popover coordinates
+  const [calPos, setCalPos] = useState({ left: 0, top: 0, width: 320, height: 320 });
+
+  useEffect(() => {
+    function onDocClick(e) {
+      if (calRef.current && !calRef.current.contains(e.target) && !calBtnRef.current?.contains?.(e.target)) {
+        setCalOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, []);
+
+  useEffect(() => {
+    // ensure calendar shows the month of the currently selected adjust.date on open
+    if (!calOpen) return;
+    if (adjust.date) {
+      const d = new Date(adjust.date + "T00:00:00");
+      setViewYear(d.getFullYear());
+      setViewMonth(d.getMonth());
+    }
+  }, [calOpen]); // eslint-disable-line
+
+  const prevMonth = () => {
+    let y = viewYear;
+    let m = viewMonth - 1;
+    if (m < 0) {
+      m = 11;
+      y -= 1;
+    }
+    setViewYear(y);
+    setViewMonth(m);
+  };
+  const nextMonth = () => {
+    let y = viewYear;
+    let m = viewMonth + 1;
+    if (m > 11) {
+      m = 0;
+      y += 1;
+    }
+    setViewYear(y);
+    setViewMonth(m);
+  };
+
+  const handleCalDayClick = (day) => {
+    if (!day) return;
+    setAdjust((p) => ({ ...p, date: toInputDate(startOfDay(day)) }));
+    setCalOpen(false);
+  };
+
+  // compute fixed popover position when opening (keeps popover visible)
+  const openCalPopover = () => {
+    const rect = calBtnRef.current?.getBoundingClientRect();
+    const popW = 320;
+    const popH = 320; // approximate height
+    let left = rect ? rect.left + window.scrollX : window.innerWidth / 2 - popW / 2;
+    let top = rect ? rect.bottom + window.scrollY + 8 : window.innerHeight / 2 - popH / 2;
+
+    // prevent overflow right
+    if (left + popW > window.scrollX + window.innerWidth - 12) {
+      left = window.scrollX + window.innerWidth - popW - 12;
+    }
+    // prevent overflow left
+    if (left < window.scrollX + 8) left = window.scrollX + 8;
+
+    // if would overflow bottom, show above button
+    if (top + popH > window.scrollY + window.innerHeight - 12) {
+      top = rect ? rect.top + window.scrollY - popH - 8 : top;
+    }
+
+    setCalPos({ left, top, width: popW, height: popH });
+    setCalOpen(true);
+  };
+
+  // ---------------------------------------
+
   function CashDetailsView({ account }) {
     return (
       <div className="max-w-5xl mx-auto">
@@ -230,7 +335,6 @@ export default function ManageAccountsPage({ sidebarOpen }) {
           </div>
 
           <div className="relative flex items-center gap-4">
-            {/* Adjust Balance now opens the small menu */}
             <button
               ref={adjustButtonRef}
               onClick={openAdjustMenu}
@@ -243,7 +347,6 @@ export default function ManageAccountsPage({ sidebarOpen }) {
               Adjust Balance
             </button>
 
-            {/* View Report navigates to the dedicated report page, passing state */}
             <button
               onClick={() =>
                 navigate(`/cash-report/${account.id}`, {
@@ -283,13 +386,12 @@ export default function ManageAccountsPage({ sidebarOpen }) {
           <p className="text-gray-500">Try searching for other keywords</p>
         </div>
 
-        {/* SMALL MENU + overlay */}
         {showAdjustMenu && (
           <div
             className="fixed inset-0 z-60 flex items-start justify-start"
             onClick={() => setShowAdjustMenu(false)}
           >
-            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+            <div className="absolute inset-0 bg-black/40" />
 
             <div
               ref={adjustMenuRef}
@@ -326,9 +428,8 @@ export default function ManageAccountsPage({ sidebarOpen }) {
           </div>
         )}
       </div>
-    );
+  );
   }
-  // ---------------------------------------
 
   // ----------------- RENDER -----------------
   return (
@@ -339,11 +440,9 @@ export default function ManageAccountsPage({ sidebarOpen }) {
         width: `calc(100% - ${sidebarOffset})`,
       }}
     >
-      {/* header (small) */}
       <div className="p-3 bg-white border-b border-gray-100 text-sm text-gray-700">Manage Accounts</div>
 
       <div className="h-full flex">
-        {/* Left column - accounts list */}
         <aside className="w-[360px] border-r border-gray-200 p-6 flex flex-col">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-semibold">Manage Accounts ({accounts.length})</h2>
@@ -399,7 +498,6 @@ export default function ManageAccountsPage({ sidebarOpen }) {
           </ul>
         </aside>
 
-        {/* Right column - account details or report */}
         <div className="flex-1 p-8 overflow-auto">
           {selectedAccount ? (
             selectedAccount.type === "Cash" ? (
@@ -515,7 +613,7 @@ export default function ManageAccountsPage({ sidebarOpen }) {
         </div>
       )}
 
-      {/* Adjust Balance modal (opened after selecting Add/Reduce) */}
+      {/* Adjust Balance modal (with calendar popover rendered as FIXED popover) */}
       {showAdjust && (
         <div className="fixed inset-0 z-60 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/40" onClick={() => setShowAdjust(false)} />
@@ -582,13 +680,78 @@ export default function ManageAccountsPage({ sidebarOpen }) {
 
                 <div>
                   <label className="text-sm text-gray-700 mb-1 block">Date</label>
-                  <input
-                    type="date"
-                    name="date"
-                    value={adjust.date}
-                    onChange={handleAdjustChange}
-                    className="w-full rounded-lg border border-gray-200 px-4 py-3"
-                  />
+
+                  {/* Calendar popover trigger */}
+                  <div className="relative">
+                    <button
+                      ref={calBtnRef}
+                      onClick={() => {
+                        if (!calOpen) {
+                          openCalPopover();
+                        } else {
+                          setCalOpen(false);
+                        }
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white"
+                    >
+                      <CalendarIcon size={16} />
+                      <span className="text-sm">{adjust.date || "Select date"}</span>
+                    </button>
+
+                    {/* NEW: fixed-position popover (not clipped by parent overflow) */}
+                    {calOpen && (
+                      <div
+                        ref={calRef}
+                        className="fixed z-[9999] bg-white border border-gray-200 rounded-lg shadow-lg p-3"
+                        style={{
+                          left: calPos.left,
+                          top: calPos.top,
+                          width: calPos.width,
+                          maxWidth: "calc(100% - 24px)",
+                        }}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <button onClick={prevMonth} className="p-1 rounded hover:bg-gray-100"><ChevronLeft size={16} /></button>
+                            <div className="text-sm font-medium">
+                              {new Date(viewYear, viewMonth, 1).toLocaleString(undefined, { month: "long", year: "numeric" })}
+                            </div>
+                            <button onClick={nextMonth} className="p-1 rounded hover:bg-gray-100"><ChevronRight size={16} /></button>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-7 gap-1 text-[11px] text-gray-500 mb-2">
+                          {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
+                            <div key={d} className="text-center py-1">{d}</div>
+                          ))}
+                        </div>
+
+                        <div className="grid grid-cols-7 gap-1">
+                          {weeks.map((week, wi) =>
+                            week.map((day, di) => {
+                              const isDisabled = !day;
+                              const isSelected = day && toInputDate(startOfDay(day)) === adjust.date;
+                              return (
+                                <button
+                                  key={`${wi}-${di}`}
+                                  onClick={() => handleCalDayClick(day)}
+                                  disabled={isDisabled}
+                                  className={`h-8 flex items-center justify-center text-xs rounded ${isDisabled ? "text-gray-300 cursor-default" : "cursor-pointer hover:bg-gray-100"} ${isSelected ? "bg-emerald-600 text-white" : ""}`}
+                                >
+                                  {day ? day.getDate() : ""}
+                                </button>
+                              );
+                            })
+                          )}
+                        </div>
+
+                        <div className="mt-3 flex justify-end gap-2">
+                          <button onClick={() => setCalOpen(false)} className="px-3 py-1 rounded border border-gray-200 bg-white text-sm">Cancel</button>
+                          <button onClick={() => setCalOpen(false)} className="px-3 py-1 rounded bg-emerald-500 text-white text-sm">OK</button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
