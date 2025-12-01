@@ -32,12 +32,10 @@ import CashReportPage from "./components/CashReportPage";
 import ReportsGallery from "./components/ReportsGallery";
 import ReportsPage from "./components/ReportsPage";
 
-
 // Expense & Other Income pages
 import { OtherIncomePage } from "./components/OtherIncomePage";
 import { ExpensePage } from "./components/ExpensePage";
 import ManageStaffsPage from "./components/ManageStaffsPage";
-
 
 // Manage Accounts page
 import ManageAccountsPage from "./components/ManageAccountsPage";
@@ -94,7 +92,6 @@ export default function App() {
             <Route path="/cash-report/:accountId" element={<CashReportPage />} />
             <Route path="/reports/:reportId" element={<ReportsPage />} />
 
-
             {/* pages we added */}
             <Route path="/expense" element={<ExpensePage sidebarOpen={sidebarOpen} />} />
             <Route path="/other-income" element={<OtherIncomePage sidebarOpen={sidebarOpen} />} />
@@ -103,11 +100,11 @@ export default function App() {
             <Route path="/settings/*" element={<SettingsPage sidebarOpen={sidebarOpen} />} />
             <Route path="/reports" element={<ReportsGallery sidebarOpen={sidebarOpen} />} />
             <Route path="/manage-staffs" element={<ManageStaffsPage sidebarOpen={sidebarOpen} />} />
-
           </Routes>
         </main>
       </div>
 
+      {/* Reminder popup */}
       {showReminder && (
         <AddReminder onClose={() => setShowReminder(false)} onSave={handleSaveReminder} />
       )}
