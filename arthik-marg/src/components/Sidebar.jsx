@@ -1,4 +1,4 @@
-// Sidebar.jsx
+// src/components/Sidebar.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -29,40 +29,48 @@ import {
 import logo from "../assets/logo.png";
 
 // Define constants
-const COLLAPSED_WIDTH_CLASS = "w-16 p-2";
-const EXPANDED_WIDTH_CLASS = "w-96 p-6";
-const COLLAPSED_WIDTH_PX = 64; // Tailwind w-16 -> 4rem -> 64px
-const EXPANDED_WIDTH_PX = 384; // Tailwind w-96 -> 24rem -> 384px
+const COLLAPSED_WIDTH = "w-16 p-2";
+const EXPANDED_WIDTH = "w-96 p-6";
 const ICON_SIZE = 20;
 
 const CUSTOM_BLUE = "bg-[#172554]";
 const CUSTOM_BLUE_HOVER_BG = "hover:bg-[#111A31]";
 
-export default function Sidebar() {
+export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
   const navigate = useNavigate();
 
   const [activePage, setActiveState] = useState("dashboard");
 
+  const [openSales, setOpenSales] = useState(false);
+  const [openPurchase, setOpenPurchase] = useState(true);
+  const [openImport, setOpenImport] = useState(false);
+  const [openBusinessTools, setOpenBusinessTools] = useState(false);
+
+  const [hoverToggle, setHoverToggle] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+
+  // ROUTING LOGIC
   const handleSetActive = (id) => {
     setActiveState(id);
 
-    // --- ROUTING LOGIC ---
     let path = `/${id}`;
     if (id === "dashboard") path = "/";
+
     if (id === "add-party") path = "/parties/add";
+
     navigate(path);
 
-    // collapse sidebar when going to settings
     if (id === "settings") {
-      setSidebarOpen(false);
+      setSidebarOpen && setSidebarOpen(false);
     }
 
-    // dropdown logic
     if (["purchase-bills", "payment-out", "purchase-return"].includes(id)) {
       setOpenPurchase(true);
       setOpenSales(false);
       setOpenImport(false);
-    } else if (["sales-invoice", "payment-in", "quotation", "sales-return"].includes(id)) {
+    } else if (
+      ["sales-invoice", "payment-in", "quotation", "sales-return"].includes(id)
+    ) {
       setOpenSales(true);
       setOpenPurchase(false);
       setOpenImport(false);
@@ -77,14 +85,6 @@ export default function Sidebar() {
     }
   };
 
-  const [openSales, setOpenSales] = useState(false);
-  const [openPurchase, setOpenPurchase] = useState(true);
-  const [openImport, setOpenImport] = useState(false);
-  const [openBusinessTools, setOpenBusinessTools] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [hoverToggle, setHoverToggle] = useState(false);
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
-
   const toggleButtonContent = (isSidebarOpen, isHovered) => {
     if (isSidebarOpen) {
       return isHovered ? <ChevronsLeft size={24} /> : <Menu size={24} />;
@@ -95,21 +95,12 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* Invisible spacer: keeps main content pushed to right so fixed sidebar doesn't overlap content */}
       <div
-        aria-hidden="true"
-        className={`${sidebarOpen ? "w-96" : "w-16"} flex-shrink-0`}
-        style={{ pointerEvents: "none" }}
-      />
-
-      {/* Fixed sidebar (independent, scrollable) */}
-      <div
-        className={`fixed left-0 top-0 bottom-0 bg-white border-r border-gray-300 shadow-sm z-40 transition-all duration-300 overflow-y-auto ${sidebarOpen ? "w-96 p-6" : "w-16 p-2"
-          }`}
-        role="navigation"
-        aria-label="Main sidebar"
+        className={`sticky top-0 self-start h-screen bg-white border-r border-gray-300 shadow-sm z-40 transition-all duration-300 overflow-y-auto ${
+          sidebarOpen ? EXPANDED_WIDTH : COLLAPSED_WIDTH
+        }`}
       >
-        {/* INTERNAL TOGGLE (Visible ONLY when expanded) */}
+        {/* INTERNAL TOGGLE */}
         {sidebarOpen && (
           <div
             className="absolute top-4 right-4 bg-white shadow p-2 rounded cursor-pointer z-50"
@@ -121,10 +112,10 @@ export default function Sidebar() {
           </div>
         )}
 
-        {/* EXTERNAL TOGGLE (Visible ONLY when collapsed) */}
+        {/* EXTERNAL TOGGLE */}
         {!sidebarOpen && (
           <div
-            className="absolute top-4 right-4 bg-white shadow p-2 rounded cursor-pointer z-50 transition-all duration-300"
+            className="absolute top-4 right-4 bg-white shadow p-2 rounded cursor-pointer z-50"
             onClick={() => setSidebarOpen(true)}
             onMouseEnter={() => setHoverToggle(true)}
             onMouseLeave={() => setHoverToggle(false)}
@@ -141,19 +132,24 @@ export default function Sidebar() {
           </div>
         )}
 
-        {/* Profile Box */}
+        {/* Profile */}
         {sidebarOpen && (
           <div className="mb-5">
             <div
-              className={`border py-4 px-3 rounded-lg flex items-center justify-between cursor-pointer ${isProfileOpen ? `${CUSTOM_BLUE} text-white` : "border-gray-300 text-white hover:bg-gray-100"
-                }`}
+              className={`border py-4 px-3 rounded-lg flex items-center justify-between cursor-pointer ${
+                isProfileOpen ? `${CUSTOM_BLUE} text-white` : "border-gray-300 text-white hover:bg-gray-100"
+              }`}
               onClick={() => setIsProfileOpen(!isProfileOpen)}
             >
               <div className="flex items-center gap-3">
-                <div className={`w-12 h-12 flex items-center justify-center rounded-full text-lg font-bold ${isProfileOpen ? "bg-white text-[#172554]" : CUSTOM_BLUE}`}>
+                <div
+                  className={`w-12 h-12 flex items-center justify-center rounded-full text-lg font-bold ${
+                    isProfileOpen ? "bg-white text-[#172554]" : CUSTOM_BLUE
+                  }`}
+                >
                   A
                 </div>
-                <p className={`text-lg font-medium ${isProfileOpen ? "text-white" : "text-gray-800"}`}>ArthikMarg</p>
+                <p className={isProfileOpen ? "text-white" : "text-gray-800"}>ArthikMarg</p>
               </div>
               <ChevronsUpDown size={22} className={isProfileOpen ? "text-white" : "text-gray-500"} />
             </div>
@@ -201,7 +197,7 @@ export default function Sidebar() {
 
           <SidebarItem label="Expense" icon={<Package size={ICON_SIZE} />} id="expense" active={activePage} setActive={handleSetActive} open={sidebarOpen} />
 
-          <SidebarItem label="Other Income" icon={<Wallet size={ICON_SIZE} />} id="income" active={activePage} setActive={handleSetActive} open={sidebarOpen} />
+          <SidebarItem label="Other Income" icon={<Wallet size={ICON_SIZE} />} id="other-income" active={activePage} setActive={handleSetActive} open={sidebarOpen} />
 
           <SidebarItem label="Manage Accounts" icon={<Building size={ICON_SIZE} />} id="accounts" active={activePage} setActive={handleSetActive} open={sidebarOpen} />
         </ul>
@@ -211,7 +207,16 @@ export default function Sidebar() {
 
         <ul className="space-y-1">
           <SidebarItem label="Reports" icon={<BarChart2 size={ICON_SIZE} />} id="reports" active={activePage} setActive={handleSetActive} open={sidebarOpen} />
-          <SidebarItem label="Manage Staffs" icon={<Users2 size={ICON_SIZE} />} id="staffs" active={activePage} setActive={handleSetActive} open={sidebarOpen} />
+
+          {/* ✅ FIXED: Correct ID for Manage Staffs */}
+          <SidebarItem
+            label="Manage Staffs"
+            icon={<Users2 size={ICON_SIZE} />}
+            id="manage-staffs"   // <-- FIXED
+            active={activePage}
+            setActive={handleSetActive}
+            open={sidebarOpen}
+          />
 
           {/* Import */}
           <li>
@@ -224,11 +229,11 @@ export default function Sidebar() {
           {/* Business Tools */}
           <li>
             <Dropdown label="Business Tools" icon={<Wrench size={ICON_SIZE} />} open={openBusinessTools} setOpen={setOpenBusinessTools} sidebarOpen={sidebarOpen}>
-              <DropItem label="Business Cards" id="business-cards" />
-              <DropItem label="Greeting Card" id="greeting-card" />
-              <DropItem label="Reminders" id="reminders" />
-              <DropItem label="Bill Gallery" id="bill-gallery" />
-              <DropItem label="Notebook" id="notebook" />
+              <DropItem label="Business Cards" id="business-cards" active={activePage} setActive={handleSetActive} />
+              <DropItem label="Greeting Card" id="greeting-card" active={activePage} setActive={handleSetActive} />
+              <DropItem label="Reminders" id="reminders" active={activePage} setActive={handleSetActive} />
+              <DropItem label="Bill Gallery" id="bill-gallery" active={activePage} setActive={handleSetActive} />
+              <DropItem label="Notebook" id="notebook" active={activePage} setActive={handleSetActive} />
             </Dropdown>
           </li>
         </ul>
@@ -254,8 +259,11 @@ function SidebarItem({ label, icon, active, id, setActive, open }) {
   return (
     <li
       onClick={() => setActive(id)}
-      className={`flex items-center gap-3 p-2 rounded cursor-pointer text-lg transition ${active === id ? `${CUSTOM_BLUE} text-white` : `text-gray-700 hover:bg-gray-200 hover:text-black`
-        } ${!open && "justify-center"}`}
+      className={`flex items-center gap-3 p-2 rounded cursor-pointer text-lg transition ${
+        active === id
+          ? `${CUSTOM_BLUE} text-white`
+          : `text-gray-700 hover:bg-gray-200 hover:text-black`
+      } ${!open && "justify-center"}`}
     >
       {icon}
       {open && <span>{label}</span>}
@@ -269,8 +277,9 @@ function Dropdown({ label, icon, open, setOpen, sidebarOpen, children }) {
   return (
     <>
       <div
-        className={`flex items-center justify-between p-2 rounded cursor-pointer text-lg transition ${open ? `${CUSTOM_BLUE} text-white` : `text-gray-700 hover:bg-gray-200 hover:text-black`
-          }`}
+        className={`flex items-center justify-between p-2 rounded cursor-pointer text-lg transition ${
+          open ? `${CUSTOM_BLUE} text-white` : `text-gray-700 hover:bg-gray-200 hover:text-black`
+        }`}
         onClick={() => setOpen(!open)}
       >
         <div className="flex items-center gap-3">
@@ -291,8 +300,11 @@ function DropItem({ label, id, active, setActive }) {
   return (
     <li
       onClick={() => id && setActive(id)}
-      className={`p-2 text-base rounded cursor-pointer transition ${active === id ? `${CUSTOM_BLUE} text-white` : `text-gray-700 hover:bg-gray-200  hover:text-black`
-        }`}
+      className={`p-2 text-base rounded cursor-pointer transition ${
+        active === id
+          ? `${CUSTOM_BLUE} text-white`
+          : `text-gray-700 hover:bg-gray-200 hover:text-black`
+      }`}
     >
       {label}
     </li>
