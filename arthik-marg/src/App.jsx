@@ -20,6 +20,7 @@ import ExpenseInsights from "./components/ExpenseInsights";
 import SalesReturn from "./components/SalesReturn";
 import PurchaseReturn from "./components/PurchaseReturn";
 
+
 // New imports
 import { InventoryPage } from "./components/InventoryPage";
 import { PurchaseBillsPage } from "./components/PurchaseBillsPage";
@@ -28,9 +29,8 @@ import { ImportItemsPage } from "./components/ImportItemsPage";
 import { SalesInvoicePage } from "./components/SalesInvoicePage";
 import { PartiesPage } from "./components/PartiesPage";
 
-// ---------- NEW: Settings page (nested routes) ----------
 import SettingsPage from "./components/SettingsPage";
-// -------------------------------------------------------
+
 
 export default function App() {
   const navigate = useNavigate();
@@ -51,7 +51,7 @@ export default function App() {
       <div className="flex-1 flex flex-col">
         <Topbar onProfileClick={() => navigate("/complete-profile")} />
 
-        // App.jsx (replace your Routes block with this snippet)
+    
 <main className="p-6">
   <Routes>
     <Route path="/" element={<Dashboard />} />
