@@ -36,6 +36,9 @@ import ReportsPage from "./components/ReportsPage";
 import { OtherIncomePage } from "./components/OtherIncomePage";
 import { ExpensePage } from "./components/ExpensePage";
 import ManageStaffsPage from "./components/ManageStaffsPage";
+import BusinessCardGenerator from "./components/BusinessCardGenerator.jsx";
+
+
 
 // Manage Accounts page
 import ManageAccountsPage from "./components/ManageAccountsPage";
@@ -100,6 +103,9 @@ export default function App() {
             <Route path="/settings/*" element={<SettingsPage sidebarOpen={sidebarOpen} />} />
             <Route path="/reports" element={<ReportsGallery sidebarOpen={sidebarOpen} />} />
             <Route path="/manage-staffs" element={<ManageStaffsPage sidebarOpen={sidebarOpen} />} />
+            <Route path="/business-card" element={<BusinessCardGenerator sidebarOpen={sidebarOpen} />} />
+
+
           </Routes>
         </main>
       </div>

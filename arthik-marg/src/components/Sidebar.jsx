@@ -30,11 +30,10 @@ import logo from "../assets/logo.png";
 
 // Define constants
 const COLLAPSED_WIDTH = "w-16 p-2";
-const EXPANDED_WIDTH = "w-96 p-6";
+const EXPANDED_WIDTH = "w-96 p-6"; // keep your original wide sidebar
 const ICON_SIZE = 20;
 
 const CUSTOM_BLUE = "bg-[#172554]";
-const CUSTOM_BLUE_HOVER_BG = "hover:bg-[#111A31]";
 
 export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
   const navigate = useNavigate();
@@ -229,7 +228,8 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
           {/* Business Tools */}
           <li>
             <Dropdown label="Business Tools" icon={<Wrench size={ICON_SIZE} />} open={openBusinessTools} setOpen={setOpenBusinessTools} sidebarOpen={sidebarOpen}>
-              <DropItem label="Business Cards" id="business-cards" active={activePage} setActive={handleSetActive} />
+              {/* changed to singular id to match your route */}
+              <DropItem label="Business Card" id="business-card" active={activePage} setActive={handleSetActive} />
               <DropItem label="Greeting Card" id="greeting-card" active={activePage} setActive={handleSetActive} />
               <DropItem label="Reminders" id="reminders" active={activePage} setActive={handleSetActive} />
               <DropItem label="Bill Gallery" id="bill-gallery" active={activePage} setActive={handleSetActive} />
