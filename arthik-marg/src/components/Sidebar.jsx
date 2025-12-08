@@ -68,6 +68,9 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
       case "sales-invoice":
         path = "/sales-invoice";
         break;
+      case "quotation":
+        path = "/quotation";
+        break;
       case "payment-in":
         path = "/payment-in";
         break;
@@ -137,7 +140,7 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
     navigate(path);
 
     // manage dropdown states for visual coherence
-    if (["sales-invoice", "payment-in", "sales-return"].includes(id)) {
+    if (["sales-invoice", "quotation", "payment-in", "sales-return"].includes(id)) {
       setOpenSales(true);
       setOpenPurchase(false);
       setOpenImport(false);
@@ -247,6 +250,8 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
           {/* Sales */}
           <li>
             <Dropdown label="Sales" icon={<Receipt size={ICON_SIZE} />} open={openSales} setOpen={setOpenSales} sidebarOpen={sidebarOpen}>
+              {/* Added Quotation here */}
+              <DropItem label="Quotation" id="quotation" active={activePage} setActive={handleSetActive} />
               <DropItem label="Sales Invoice" id="sales-invoice" active={activePage} setActive={handleSetActive} />
               <DropItem label="Payment In" id="payment-in" active={activePage} setActive={handleSetActive} />
               <DropItem label="Sales Return" id="sales-return" active={activePage} setActive={handleSetActive} />

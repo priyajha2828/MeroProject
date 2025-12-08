@@ -13,6 +13,7 @@ import CompleteProfile from "./components/CompleteProfile";
 import PaymentInForm from "./components/PaymentIn";
 import PaymentOutForm from "./components/PaymentOut";
 import Quotation from "./components/Quotation";
+import QuotationsPage from "./components/QuotationsPage";
 import CreateQuotation from "./components/CreateQuotation"; // <-- added
 import SaleInsights from "./components/SaleInsights";
 import PurchaseInsights from "./components/PurchaseInsights";
@@ -23,7 +24,7 @@ import SalesInvoicePage from "./components/SalesInvoicePage";
 import { PurchaseBillsPage } from "./components/PurchaseBillsPage";
 import { ImportPartiesPage } from "./components/ImportPartiesPage";
 import { ImportItemsPage } from "./components/ImportItemsPage";
-import { InventoryPage } from "./components/InventoryPage";
+import InventoryPage from "./components/InventoryPage";
 import { PartiesPage } from "./components/PartiesPage";
 import CashReportPage from "./components/CashReportPage";
 import ReportsGallery from "./components/ReportsGallery";
@@ -73,6 +74,7 @@ export default function App() {
 
             {/* Quotations */}
             <Route path="/quotation" element={<Quotation />} />
+            <Route path="/quotation" element={<QuotationsPage />} />
             <Route path="/quotation/create" element={<CreateQuotation />} />
 
             <Route path="/sale-insights" element={<SaleInsights />} />
