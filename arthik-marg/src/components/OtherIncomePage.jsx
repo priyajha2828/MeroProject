@@ -2,14 +2,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Plus, X, Calendar, Camera } from "lucide-react";
 
-/* ---------------------------
-   CategorySelect
-   - Arrow is a clickable element
-   - Dropdown shows list only (no search)
-   - Hover / keyboard highlight uses blue bar with white text
-   - Closes on outside click
-   - Exposes value via onChange(cat)
-   --------------------------- */
+/* CategorySelect: blue-highlight full-width list, no search */
 function CategorySelect({ value, onChange, categories = [] }) {
   const [open, setOpen] = useState(false);
   const [highlight, setHighlight] = useState(0);
@@ -73,7 +66,11 @@ function CategorySelect({ value, onChange, categories = [] }) {
         role="button"
       >
         <div style={{ minWidth: 0 }}>
-          {value ? <div className="truncate text-gray-800">{value}</div> : <div className="text-gray-400">Search for category</div>}
+          {value ? (
+            <div className="truncate text-gray-800">{value}</div>
+          ) : (
+            <div className="text-gray-400">Search for category</div>
+          )}
         </div>
 
         {/* Arrow button (clickable) */}
@@ -123,9 +120,7 @@ function CategorySelect({ value, onChange, categories = [] }) {
   );
 }
 
-/* ---------------------------
-   OtherIncomePage - full page + modal
-   --------------------------- */
+/* OtherIncomePage - page + modal */
 export function OtherIncomePage({ sidebarOpen = true }) {
   const expandedWidth = "24rem";
   const COLLAPSED_MARGIN = "4rem";
@@ -226,7 +221,7 @@ export function OtherIncomePage({ sidebarOpen = true }) {
 
   return (
     <>
-      {/* Main area: centered empty state or list */}
+      {/* Main area */}
       <div
         className="fixed top-16 right-0 bottom-0 overflow-auto flex flex-col items-center justify-center"
         style={{
@@ -298,7 +293,6 @@ export function OtherIncomePage({ sidebarOpen = true }) {
               boxShadow: "0 8px 40px rgba(2,6,23,0.08)",
             }}
           >
-            {/* Header */}
             <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: "1px solid rgba(0,0,0,0.04)" }}>
               <h3 className="text-lg font-semibold">Add Income</h3>
               <button onClick={() => setShowAddIncome(false)} className="p-2 rounded hover:bg-gray-100" aria-label="Close">
@@ -306,7 +300,6 @@ export function OtherIncomePage({ sidebarOpen = true }) {
               </button>
             </div>
 
-            {/* Scrollable form body */}
             <div className="px-6 py-4 overflow-y-auto" style={{ maxHeight: "calc(80vh - 140px)" }}>
               <form onSubmit={handleSave} className="space-y-4">
                 {/* Income No & Date */}
@@ -378,7 +371,6 @@ export function OtherIncomePage({ sidebarOpen = true }) {
                   </div>
                 ))}
 
-                {/* Divider */}
                 <div className="border-t" style={{ borderColor: "rgba(0,0,0,0.06)" }} />
 
                 {/* Total & Payment method */}
