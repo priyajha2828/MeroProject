@@ -1,17 +1,12 @@
 // src/components/Dashboard.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+
 import Card from "./Card";
 import AddReminder from "./AddReminder";
 import CompleteProfile from "./CompleteProfile";
 
-import {
-  DollarSign,
-  CreditCard,
-  ShoppingCart,
-  Package,
-  BarChart2,
-} from "lucide-react";
+import { DollarSign, CreditCard, ShoppingCart, Package, BarChart2 } from "lucide-react";
 
 import {
   LineChart,
@@ -23,14 +18,81 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
+import PaymentInForm from "./PaymentIn";
+import PaymentOutForm from "./PaymentOut";
+import CreateQuotation from "./CreateQuotation";
+import SalesReturn from "./SalesReturn";
+import PurchaseReturn from "./PurchaseReturn";
+import { ExpensePage } from "./ExpensePage";
+import { OtherIncomePage } from "./OtherIncomePage";
+
+/**
+ * Lightweight helper panels used by Dashboard.
+ * If you have separate components for these, replace these with imports.
+ */
+function ReminderPanel({ reminders = [], open = () => {} }) {
+  return (
+    <div className="bg-white p-4 rounded-xl shadow min-h-40">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-sm font-semibold">Reminders</h3>
+          <p className="text-xs text-gray-500 mt-1">Upcoming reminders: {reminders.length}</p>
+        </div>
+        <button onClick={open} className="px-3 py-1 bg-[#172554] text-white rounded text-sm">Open</button>
+      </div>
+    </div>
+  );
+}
+
+function BalancePanel() {
+  return (
+    <div className="bg-white p-4 rounded-xl shadow min-h-40 flex flex-col justify-between">
+      <div>
+        <div className="text-sm text-gray-500">Total Balance (Cash & Bank)</div>
+        <div className="text-2xl font-semibold mt-2">Rs. 0</div>
+      </div>
+    </div>
+  );
+}
+
+function ProfilePanel({ profileData = null, open = () => {} }) {
+  return (
+    <div className="bg-white p-4 rounded-xl shadow min-h-40 flex flex-col justify-between">
+      <div>
+        <div className="text-sm text-gray-500">Complete your Profile</div>
+        <div className="font-semibold text-lg">{profileData ? "100%" : "30%"}</div>
+      </div>
+
+      <button onClick={open} className="px-4 py-2 mt-4 bg-[#072255] text-white rounded-xl">
+        Complete Profile
+      </button>
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const navigate = useNavigate();
 
+  const [showAddMore, setShowAddMore] = useState(false);
+
+  // Modal flags
+  const [showPaymentIn, setShowPaymentIn] = useState(false);
+  const [showPaymentOut, setShowPaymentOut] = useState(false);
+  const [showQuotationCreate, setShowQuotationCreate] = useState(false);
+  const [showSalesReturnCreate, setShowSalesReturnCreate] = useState(false);
+  const [showPurchaseReturnCreate, setShowPurchaseReturnCreate] = useState(false);
+  const [showExpenseCreate, setShowExpenseCreate] = useState(false);
+  const [showIncomeCreate, setShowIncomeCreate] = useState(false);
+
   const [showReminder, setShowReminder] = useState(false);
   const [reminders, setReminders] = useState([]);
+
   const [showProfile, setShowProfile] = useState(false);
   const [profileData, setProfileData] = useState(null);
-  const [showAddMore, setShowAddMore] = useState(false);
+
+  const handleSaveReminder = (newReminder) => {
+    setReminders((prev) => [...prev, newReminder]);
+  };
 
   const cashflowData = [
     { day: "Mon", income: 2000, expense: 1500 },
@@ -42,145 +104,49 @@ export default function Dashboard() {
     { day: "Sun", income: 4000, expense: 2200 },
   ];
 
-  const handleSaveReminder = (newReminder) => {
-    setReminders([...reminders, newReminder]);
-  };
-
-  const buttonBaseClass = "px-4 py-2 rounded-xl text-white hover:opacity-90 transition-colors";
+  const buttonBaseClass = "px-4 py-2 rounded-xl text-white hover:opacity-90";
 
   return (
-    <div
-      className="p-4 min-h-screen transition-theme"
-      style={{ background: "var(--bg-default)", color: "var(--text-default)" }}
-    >
-      {/* Header */}
+    <div className="p-4">
+      {/* HEADER */}
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-3xl font-bold">Welcome Rejina Agrawal</h2>
+        <h2 className="text-3xl font-bold">Welcome</h2>
 
         <div className="flex gap-3 relative">
-          <button
-            onClick={() => navigate("/quick-pos")}
-            className={buttonBaseClass}
-            style={{ background: "var(--primary-500)" }}
-          >
-            Quick POS
-          </button>
+          <button onClick={() => navigate("/quick-pos")} className={`${buttonBaseClass} bg-[#072255]`}>Quick POS</button>
+          <button onClick={() => navigate("/add-sales")} className={`${buttonBaseClass} bg-[#072255]`}>+ Add Sales</button>
+          <button onClick={() => navigate("/add-purchase")} className={`${buttonBaseClass} bg-[#072255]`}>+ Add Purchase</button>
 
-          <button
-            onClick={() => navigate("/add-sales")}
-            className={buttonBaseClass}
-            style={{ background: "var(--primary-500)" }}
-          >
-            + Add Sales
-          </button>
-
-          <button
-            onClick={() => navigate("/add-purchase")}
-            className={buttonBaseClass}
-            style={{ background: "var(--primary-500)" }}
-          >
-            + Add Purchase
-          </button>
-
-          {/* Add More Dropdown */}
           <div className="relative">
-            <button
-              onClick={() => setShowAddMore(!showAddMore)}
-              className={`${buttonBaseClass} flex items-center gap-1`}
-              style={{ background: "var(--primary-500)" }}
-            >
+            <button onClick={() => setShowAddMore((prev) => !prev)} className={`${buttonBaseClass} bg-[#072255] flex items-center gap-1`}>
               + Add More ▼
             </button>
 
             {showAddMore && (
-              <div
-                className="absolute right-0 mt-2 w-48 rounded-xl shadow-lg z-50 border"
-                style={{
-                  background: "var(--surface-100)",
-                  borderColor: "var(--text-default)",
-                }}
-                role="menu"
-              >
-                <button
-                  onClick={() => navigate("/payment-in")}
-                  className="flex items-center gap-2 w-full px-4 py-2 hover:opacity-90"
-                  style={{ color: "var(--text-default)" }}
-                >
-                  <DollarSign size={16} /> Payment In
-                </button>
-
-                <button
-                  onClick={() => navigate("/payment-out")}
-                  className="flex items-center gap-2 w-full px-4 py-2 hover:opacity-90"
-                  style={{ color: "var(--text-default)" }}
-                >
-                  <CreditCard size={16} /> Payment Out
-                </button>
-
-                <button
-                  onClick={() => navigate("/quotation")}
-                  className="flex items-center gap-2 w-full px-4 py-2 hover:opacity-90"
-                  style={{ color: "var(--text-default)" }}
-                >
-                  <ShoppingCart size={16} /> Quotation
-                </button>
-
-                <button
-                  onClick={() => navigate("/sales-return")}
-                  className="flex items-center gap-2 w-full px-4 py-2 hover:opacity-90"
-                  style={{ color: "var(--text-default)" }}
-                >
-                  <Package size={16} /> Sales Return
-                </button>
-
-                <button
-                  onClick={() => navigate("/purchase-return")}
-                  className="flex items-center gap-2 w-full px-4 py-2 hover:opacity-90"
-                  style={{ color: "var(--text-default)" }}
-                >
-                  <Package size={16} /> Purchase Return
-                </button>
-
-                <button
-                  onClick={() => navigate("/expense-insights")}
-                  className="flex items-center gap-2 w-full px-4 py-2 hover:opacity-90"
-                  style={{ color: "var(--text-default)" }}
-                >
-                  <BarChart2 size={16} /> Expense
-                </button>
-
-                <button
-                  onClick={() => navigate("/income")}
-                  className="flex items-center gap-2 w-full px-4 py-2 hover:opacity-90 rounded-b-xl"
-                  style={{ color: "var(--text-default)" }}
-                >
-                  <DollarSign size={16} /> Income
-                </button>
+              <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-xl shadow-lg z-50">
+                <DropdownBtn label="Payment In" icon={<DollarSign size={16} />} onClick={() => { setShowAddMore(false); setShowPaymentIn(true); }} />
+                <DropdownBtn label="Payment Out" icon={<CreditCard size={16} />} onClick={() => { setShowAddMore(false); setShowPaymentOut(true); }} />
+                <DropdownBtn label="Quotation" icon={<ShoppingCart size={16} />} onClick={() => { setShowAddMore(false); setShowQuotationCreate(true); }} />
+                <DropdownBtn label="Sales Return" icon={<Package size={16} />} onClick={() => { setShowAddMore(false); setShowSalesReturnCreate(true); }} />
+                <DropdownBtn label="Purchase Return" icon={<Package size={16} />} onClick={() => { setShowAddMore(false); setShowPurchaseReturnCreate(true); }} />
+                <DropdownBtn label="Expense" icon={<BarChart2 size={16} />} onClick={() => { setShowAddMore(false); setShowExpenseCreate(true); }} />
+                <DropdownBtn label="Income" icon={<DollarSign size={16} />} onClick={() => { setShowAddMore(false); setShowIncomeCreate(true); }} />
               </div>
             )}
           </div>
         </div>
       </div>
 
-      {/* Cashflow */}
-      <div
-        className="p-4 rounded-xl mb-6 shadow"
-        style={{ background: "var(--surface-100)", borderColor: "var(--text-default)" }}
-      >
+      {/* CASHFLOW WIDGET */}
+      <div className="bg-white p-4 rounded-xl shadow mb-6">
         <h3 className="font-semibold mb-4">Cashflow (Last 7 Days)</h3>
-
         <div className="h-56">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={cashflowData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--surface-200)" />
-              <XAxis dataKey="day" stroke="var(--muted)" />
-              <YAxis stroke="var(--muted)" />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "var(--surface-200)",
-                  borderRadius: 8,
-                }}
-              />
+              <CartesianGrid stroke="#e5e7eb" strokeDasharray="3 3" />
+              <XAxis dataKey="day" stroke="#6b7280" />
+              <YAxis stroke="#6b7280" />
+              <Tooltip contentStyle={{ backgroundColor: "#f3f4f6", borderRadius: 8 }} />
               <Line type="monotone" dataKey="income" stroke="#10B981" strokeWidth={2} />
               <Line type="monotone" dataKey="expense" stroke="#EF4444" strokeWidth={2} />
             </LineChart>
@@ -190,125 +156,92 @@ export default function Dashboard() {
 
       {/* Cards */}
       <div className="grid grid-cols-5 gap-4 mb-4">
-        <Card
-          title="To Receive"
-          amount="Rs. 0"
-          icon={<DollarSign size={20} />}
-          onClick={() => navigate("/to-receive")}
-        />
-
-        <Card
-          title="To Give"
-          amount="Rs. 0"
-          icon={<CreditCard size={20} />}
-          onClick={() => navigate("/to-give")}
-        />
-
-        <Card
-          title="Sales"
-          amount="Rs. 0"
-          icon={<ShoppingCart size={20} />}
-          onClick={() => navigate("/sale-insights")}
-        />
-
-        <Card
-          title="Purchase"
-          amount="Rs. 0"
-          icon={<Package size={20} />}
-          onClick={() => navigate("/purchase-insights")}
-        />
-
-        <Card
-          title="Expense"
-          amount="Rs. 0"
-          icon={<BarChart2 size={20} />}
-          onClick={() => navigate("/expense-insights")}
-        />
+        <Card title="To Receive" amount="Rs. 0" color="bg-emerald-50" icon={<DollarSign size={20} />} onClick={() => navigate("/to-receive")} />
+        <Card title="To Give" amount="Rs. 0" color="bg-pink-50" icon={<CreditCard size={20} />} onClick={() => navigate("/to-give")} />
+        <Card title="Sales" amount="Rs. 0" color="bg-emerald-50" icon={<ShoppingCart size={20} />} onClick={() => navigate("/sale-insights")} />
+        <Card title="Purchase" amount="Rs. 0" color="bg-sky-50" icon={<Package size={20} />} onClick={() => navigate("/purchase-insights")} />
+        <Card title="Expense" amount="Rs. 0" color="bg-indigo-50" icon={<BarChart2 size={20} />} onClick={() => navigate("/expense-insights")} />
       </div>
 
-      {/* Panels */}
+      {/* PANELS */}
       <div className="grid grid-cols-3 gap-4 mb-8">
-        {/* Reminders */}
-        <div
-          className="p-4 rounded-xl min-h-40"
-          style={{ background: "var(--surface-100)", borderColor: "var(--text-default)" }}
-        >
-          <div className="text-sm" style={{ color: "var(--muted)" }}>
-            Upcoming Reminders ({reminders.length})
-          </div>
-
-          {reminders.length === 0 ? (
-            <div className="mt-2" style={{ color: "var(--muted)" }}>
-              Looks like you haven't created any reminders yet.
-            </div>
-          ) : (
-            <ul className="mt-2 list-disc list-inside">
-              {reminders.map((r, i) => (
-                <li key={i}>
-                  {r.title} - {new Date(r.dateTime).toLocaleString()} ({r.type})
-                </li>
-              ))}
-            </ul>
-          )}
-
-          <button
-            onClick={() => setShowReminder(true)}
-            className={`${buttonBaseClass} mt-3`}
-            style={{ background: "var(--primary-500)" }}
-          >
-            Add New Reminder
-          </button>
-        </div>
-
-        {/* Balance */}
-        <div
-          className="p-4 rounded-xl min-h-40 flex flex-col justify-between"
-          style={{ background: "var(--surface-100)", borderColor: "var(--text-default)" }}
-        >
-          <div>
-            <div className="text-sm" style={{ color: "var(--muted)" }}>
-              Total Balance (Cash & Bank)
-            </div>
-            <div className="text-2xl font-semibold mt-2">Rs. 0</div>
-          </div>
-        </div>
-
-        {/* Profile */}
-        <div
-          className="p-4 rounded-xl min-h-40 flex flex-col justify-between"
-          style={{ background: "var(--surface-100)", borderColor: "var(--text-default)" }}
-        >
-          <div>
-            <div className="text-sm" style={{ color: "var(--muted)" }}>
-              Complete your Profile
-            </div>
-            <div className="font-semibold text-lg">{profileData ? "100%" : "30%"}</div>
-          </div>
-
-          <button
-            onClick={() => setShowProfile(true)}
-            className={`${buttonBaseClass} mt-4`}
-            style={{ background: "var(--primary-500)" }}
-          >
-            Complete Profile
-          </button>
-        </div>
+        <ReminderPanel reminders={reminders} open={() => setShowReminder(true)} />
+        <BalancePanel />
+        <ProfilePanel profileData={profileData} open={() => setShowProfile(true)} />
       </div>
 
-      {/* Modals */}
-      {showReminder && (
-        <AddReminder
-          onClose={() => setShowReminder(false)}
-          onSave={handleSaveReminder}
-        />
+      {/* ================= MODALS FROM ADD MORE ================= */}
+      {showPaymentIn && (
+        <ModalShell onClose={() => setShowPaymentIn(false)}>
+          <PaymentInForm directOpen embedded onClose={() => setShowPaymentIn(false)} />
+        </ModalShell>
       )}
 
-      {showProfile && (
-        <CompleteProfile
-          onClose={() => setShowProfile(false)}
-          onSave={(data) => setProfileData(data)}
-        />
+      {showPaymentOut && (
+        <ModalShell onClose={() => setShowPaymentOut(false)}>
+          <PaymentOutForm directOpen embedded onClose={() => setShowPaymentOut(false)} />
+        </ModalShell>
       )}
+
+      {showQuotationCreate && (
+        <ModalShell onClose={() => setShowQuotationCreate(false)}>
+          <CreateQuotation directOpen embedded onClose={() => setShowQuotationCreate(false)} />
+        </ModalShell>
+      )}
+
+      {showSalesReturnCreate && (
+        <ModalShell onClose={() => setShowSalesReturnCreate(false)}>
+          <SalesReturn directOpen embedded onClose={() => setShowSalesReturnCreate(false)} />
+        </ModalShell>
+      )}
+
+      {showPurchaseReturnCreate && (
+        <ModalShell onClose={() => setShowPurchaseReturnCreate(false)}>
+          <PurchaseReturn directOpen embedded onClose={() => setShowPurchaseReturnCreate(false)} />
+        </ModalShell>
+      )}
+
+      {showExpenseCreate && (
+        <ModalShell onClose={() => setShowExpenseCreate(false)}>
+          <ExpensePage directOpen embedded onClose={() => setShowExpenseCreate(false)} />
+        </ModalShell>
+      )}
+
+      {showIncomeCreate && (
+        <ModalShell onClose={() => setShowIncomeCreate(false)}>
+          <OtherIncomePage directOpen embedded onClose={() => setShowIncomeCreate(false)} />
+        </ModalShell>
+      )}
+
+      {/* REMINDER */}
+      {showReminder && <AddReminder onClose={() => setShowReminder(false)} onSave={handleSaveReminder} />}
+
+      {/* PROFILE */}
+      {showProfile && <CompleteProfile onClose={() => setShowProfile(false)} onSave={(data) => setProfileData(data)} />}
+    </div>
+  );
+}
+
+/* ------------------------ SMALL HELPERS ------------------------ */
+
+function DropdownBtn({ label, icon, onClick }) {
+  return (
+    <button onClick={onClick} className="w-full text-left px-4 py-3 hover:bg-gray-50 flex items-center gap-2">
+      {icon}
+      <span>{label}</span>
+    </button>
+  );
+}
+
+function ModalShell({ children, onClose }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-start justify-center p-6 bg-black/40 overflow-auto">
+      <div className="relative bg-white rounded-lg shadow-lg w-full max-w-4xl mt-10">
+        <button onClick={onClose} className="absolute right-4 top-4 text-gray-600 hover:text-black">
+          ✕
+        </button>
+        <div className="p-6">{children}</div>
+      </div>
     </div>
   );
 }

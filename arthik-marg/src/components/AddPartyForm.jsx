@@ -1,16 +1,15 @@
 // src/components/AddPartyForm.jsx
-import React, { useState, useContext } from "react";
+import React, { useState } from "react";
 import { User, Upload, X } from "lucide-react";
-import { ThemeContext } from "../context/ThemeContext"; // matches your ThemeContext.js
 
-// Custom fallback classes (tailwind utilities kept for layout)
+// Custom Colors
+const CUSTOM_BLUE = "bg-[#172554]";
+const CUSTOM_BLUE_TEXT = "text-[#172554]";
+const CUSTOM_BLUE_HOVER_BG = "hover:bg-[#111A31]";
 const GRAY_HOVER_BG = "hover:bg-gray-100";
 
-export function AddPartyForm({ onClose }) {
+export default function AddPartyForm({ onClose } = {}) {
   const today = new Date().toISOString().split("T")[0];
-
-  // theme from context (ThemeProvider applies CSS variables on root)
-  const { theme } = useContext(ThemeContext);
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -30,23 +29,17 @@ export function AddPartyForm({ onClose }) {
   };
 
   const handlePhotoUpload = (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setPhotoPreview(reader.result);
-      };
+      reader.onloadend = () => setPhotoPreview(reader.result);
       reader.readAsDataURL(file);
     }
   };
 
   const handleSave = () => {
-    console.log("Saving Party:", {
-      formData,
-      partyType,
-      transactionType,
-      photo: photoPreview ? "Uploaded" : "None",
-    });
+    // replace with your API or state logic
+    console.log("Saving Party:", { formData, partyType, transactionType, photo: !!photoPreview });
     if (onClose) onClose();
   };
 
@@ -56,9 +49,9 @@ export function AddPartyForm({ onClose }) {
 
   const InputField = ({ label, name, placeholder, type = "text", required = false }) => (
     <div className="flex flex-col w-full">
-      <label className="text-sm font-medium mb-1" style={{ color: "var(--text-default)" }}>
+      <label className="text-sm font-medium text-gray-700 mb-1">
         {label}
-        {required && <span className="text-red-500"> *</span>}
+        {required && <span className="text-red-500">*</span>}
       </label>
       <input
         type={type}
@@ -67,114 +60,57 @@ export function AddPartyForm({ onClose }) {
         onChange={handleChange}
         placeholder={placeholder}
         required={required}
-        className="px-3 py-2 border rounded-lg focus:outline-none text-sm"
-        style={{
-          borderColor: "rgba(128,128,128,0.35)",
-          background: "var(--surface-100)",
-          color: "var(--text-default)",
-        }}
+        className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#172554] text-sm"
       />
     </div>
   );
 
   const TabButton = ({ name }) => (
     <button
+      type="button"
       onClick={() => setActiveTab(name)}
       className={`px-4 py-2 text-sm font-medium transition-colors duration-200 ${
-        activeTab === name ? "border-b-2" : "text-gray-400"
+        activeTab === name ? `${CUSTOM_BLUE_TEXT} border-b-2 border-[#172554]` : `text-gray-500 ${GRAY_HOVER_BG}`
       }`}
-      style={{
-        borderColor: activeTab === name ? "var(--primary-500)" : "transparent",
-        color: activeTab === name ? "var(--primary-500)" : "var(--text-default)",
-        background: "transparent",
-      }}
     >
       {name}
     </button>
   );
 
-  const TransactionButton = ({ type, label }) => {
-    const active = transactionType === type;
-    return (
-      <button
-        onClick={() => setTransactionType(type)}
-        className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors duration-200 border`}
-        style={{
-          background: active ? "var(--primary-500)" : "var(--surface-100)",
-          color: active ? "var(--text-default)" : "var(--text-default)",
-          borderColor: active ? "transparent" : "rgba(128,128,128,0.35)",
-          boxShadow: active ? "0 6px 18px rgba(16,24,40,0.15)" : "none",
-        }}
-      >
-        {label}
-      </button>
-    );
-  };
-
-  // modal container style driven by CSS variables from ThemeProvider
-  const modalStyle = {
-    background: "var(--bg-default)",
-    color: "var(--text-default)",
-    // small visual tweak if classic theme: subtle border
-    border: theme === "classic" ? "1px solid rgba(0,0,0,0.08)" : "none",
-  };
-
-  // button style (primary) uses --primary-500 and --text-default
-  const primaryButtonStyle = {
-    background: "var(--primary-500)",
-    color: "var(--text-default)",
-  };
+  const TransactionButton = ({ type, label }) => (
+    <button
+      type="button"
+      onClick={() => setTransactionType(type)}
+      className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors duration-200 border ${
+        transactionType === type ? `${CUSTOM_BLUE} text-white border-transparent shadow-md` : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+      }`}
+    >
+      {label}
+    </button>
+  );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div
-        className="rounded-lg shadow-2xl w-full max-w-2xl transform transition-all"
-        style={modalStyle}
-      >
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+      <div className="bg-white rounded-lg shadow-2xl w-full max-w-2xl transform transition-all">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b" style={{ borderColor: "rgba(128,128,128,0.08)" }}>
-          <h2 className="text-xl font-bold" style={{ color: "var(--text-default)" }}>
-            Add New Party
-          </h2>
-          <button onClick={handleClose} className="text-gray-400 hover:text-gray-700">
-            <X size={24} style={{ color: "var(--text-default)" }} />
+        <div className="flex items-center justify-between p-4 border-b border-gray-200">
+          <h2 className="text-xl font-bold text-gray-800">Add New Party</h2>
+          <button onClick={handleClose} className="text-gray-400 hover:text-gray-700" aria-label="Close">
+            <X size={22} />
           </button>
         </div>
 
-        {/* Form Body */}
+        {/* Body */}
         <div className="p-6">
-          {/* Top Row */}
           <div className="flex gap-6 mb-6">
             <div className="flex flex-col items-center">
-              <div
-                className="w-24 h-24 rounded-full flex items-center justify-center mb-2 overflow-hidden border"
-                style={{
-                  background: "var(--surface-100)",
-                  borderColor: "rgba(128,128,128,0.12)",
-                }}
-              >
-                {photoPreview ? (
-                  <img src={photoPreview} alt="Party" className="w-full h-full object-cover" />
-                ) : (
-                  <User size={48} style={{ color: "rgba(128,128,128,0.7)" }} />
-                )}
+              <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center mb-2 overflow-hidden border border-gray-400">
+                {photoPreview ? <img src={photoPreview} alt="Party" className="w-full h-full object-cover" /> : <User size={48} className="text-gray-500" />}
               </div>
 
-              <input
-                type="file"
-                id="photo-upload"
-                accept="image/*"
-                className="hidden"
-                onChange={handlePhotoUpload}
-              />
-
-              <label
-                htmlFor="photo-upload"
-                className="text-sm font-medium mb-0 hover:text-black flex items-center gap-1 cursor-pointer"
-                style={{ color: "var(--text-default)" }}
-              >
-                <Upload size={14} />
-                <span style={{ color: "var(--text-default)" }}>Upload Photo</span>
+              <input type="file" id="photo-upload" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
+              <label htmlFor="photo-upload" className="text-sm font-medium text-gray-700 hover:text-black flex items-center gap-1 cursor-pointer">
+                <Upload size={14} /> Upload Photo
               </label>
             </div>
 
@@ -184,94 +120,65 @@ export function AddPartyForm({ onClose }) {
             </div>
           </div>
 
-          {/* Party Type */}
           <div className="mb-6">
-            <label className="text-sm font-medium mb-2 block" style={{ color: "var(--text-default)" }}>
-              Party Type
-            </label>
-
+            <label className="text-sm font-medium text-gray-700 mb-2 block">Party Type</label>
             <div className="flex gap-3">
               <button
+                type="button"
                 onClick={() => {
                   setPartyType("Customer");
                   setTransactionType("To Receive");
                 }}
-                className="px-4 py-2 text-sm font-medium rounded transition-colors duration-200 border"
-                style={{
-                  background: partyType === "Customer" ? "var(--primary-500)" : "var(--surface-100)",
-                  color: partyType === "Customer" ? "var(--text-default)" : "var(--text-default)",
-                  borderColor: partyType === "Customer" ? "transparent" : "rgba(128,128,128,0.35)",
-                }}
+                className={`px-4 py-2 text-sm font-medium rounded transition-colors duration-200 border ${partyType === "Customer" ? `${CUSTOM_BLUE} text-white` : "bg-gray-100 text-gray-700 border-gray-300"}`}
               >
                 Customer
               </button>
 
               <button
+                type="button"
                 onClick={() => {
                   setPartyType("Supplier");
                   setTransactionType("To Give");
                 }}
-                className="px-4 py-2 text-sm font-medium rounded transition-colors duration-200 border"
-                style={{
-                  background: partyType === "Supplier" ? "var(--primary-500)" : "var(--surface-100)",
-                  color: partyType === "Supplier" ? "var(--text-default)" : "var(--text-default)",
-                  borderColor: partyType === "Supplier" ? "transparent" : "rgba(128,128,128,0.35)",
-                }}
+                className={`px-4 py-2 text-sm font-medium rounded transition-colors duration-200 border ${partyType === "Supplier" ? `${CUSTOM_BLUE} text-white` : "bg-gray-100 text-gray-700 border-gray-300"}`}
               >
                 Supplier
               </button>
             </div>
           </div>
 
-          {/* Tabs */}
-          <div className="flex border-b mb-6" style={{ borderColor: "rgba(128,128,128,0.08)" }}>
+          <div className="flex border-b border-gray-200 mb-6">
             <TabButton name="Credit Info" />
             <TabButton name="Additional Info" />
           </div>
 
-          {/* Tab Content */}
           {activeTab === "Credit Info" && (
             <div className="space-y-6">
               <div className="flex gap-6">
                 <div className="flex flex-col w-1/2">
-                  <label className="text-sm font-medium mb-1" style={{ color: "var(--text-default)" }}>
-                    Opening Balance
-                  </label>
+                  <label className="text-sm font-medium text-gray-700 mb-1">Opening Balance</label>
                   <input
                     type="number"
                     name="openingBalance"
                     value={formData.openingBalance}
                     onChange={handleChange}
                     placeholder="Rs. eg. 0"
-                    className="px-3 py-2 border rounded-lg focus:outline-none text-sm"
-                    style={{
-                      borderColor: "rgba(128,128,128,0.35)",
-                      background: "var(--surface-100)",
-                      color: "var(--text-default)",
-                    }}
+                    className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#172554] text-sm"
                   />
                 </div>
 
                 <div className="flex flex-col w-1/2">
-                  <label className="text-sm font-medium mb-1" style={{ color: "var(--text-default)" }}>
-                    As of Date
-                  </label>
+                  <label className="text-sm font-medium text-gray-700 mb-1">As of Date</label>
                   <input
                     type="date"
                     name="asOfDate"
                     value={formData.asOfDate}
                     onChange={handleChange}
-                    className="px-3 py-2 border rounded-lg text-sm focus:outline-none"
-                    style={{
-                      borderColor: "rgba(128,128,128,0.35)",
-                      background: "var(--surface-100)",
-                      color: "var(--text-default)",
-                    }}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#172554]"
                   />
                 </div>
               </div>
 
-              {/* Transaction Type */}
               <div className="flex gap-4 pt-2">
                 <TransactionButton type="To Receive" label="To Receive" />
                 <TransactionButton type="To Give" label="To Give" />
@@ -279,20 +186,12 @@ export function AddPartyForm({ onClose }) {
             </div>
           )}
 
-          {activeTab === "Additional Info" && (
-            <div className="text-sm p-4" style={{ color: "var(--text-default)" }}>
-              Additional fields go here (GSTIN, Address, Email, etc.)
-            </div>
-          )}
+          {activeTab === "Additional Info" && <div className="text-gray-500 p-4">Additional fields go here (GSTIN, Address, Email, etc.)</div>}
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end p-4 border-t rounded-b-lg" style={{ borderColor: "rgba(128,128,128,0.08)", background: "var(--surface-200)" }}>
-          <button
-            onClick={handleSave}
-            className="flex items-center gap-2 px-6 py-3 rounded-lg font-semibold"
-            style={primaryButtonStyle}
-          >
+        <div className="flex justify-end p-4 border-t border-gray-200 bg-gray-50 rounded-b-lg">
+          <button onClick={handleSave} className={`flex items-center gap-2 px-6 py-3 ${CUSTOM_BLUE} text-white rounded-lg font-semibold ${CUSTOM_BLUE_HOVER_BG} transition-colors duration-200 shadow-md`}>
             Save Party
           </button>
         </div>
@@ -300,5 +199,3 @@ export function AddPartyForm({ onClose }) {
     </div>
   );
 }
-
-export default AddPartyForm;

@@ -1,12 +1,10 @@
-// src/App.jsx
+// src/App.jsx (full)
 import React, { useState } from "react";
 import { Routes, Route, useNavigate } from "react-router-dom";
 
 import Sidebar from "./components/Sidebar";
 import Topbar from "./components/Topbar";
-import AddReminder from "./components/AddReminder";
 
-// Existing Pages
 import Dashboard from "./components/Dashboard";
 import AddSales from "./components/AddSales";
 import AddPurchase from "./components/AddPurchase";
@@ -15,14 +13,13 @@ import CompleteProfile from "./components/CompleteProfile";
 import PaymentInForm from "./components/PaymentIn";
 import PaymentOutForm from "./components/PaymentOut";
 import Quotation from "./components/Quotation";
+import CreateQuotation from "./components/CreateQuotation"; // <-- added
 import SaleInsights from "./components/SaleInsights";
 import PurchaseInsights from "./components/PurchaseInsights";
 import ExpenseInsights from "./components/ExpenseInsights";
-import SalesReturn from "./components/SalesReturn";
 import PurchaseReturn from "./components/PurchaseReturn";
-
-// New / other pages
-import { SalesInvoicePage } from "./components/SalesInvoicePage";
+import SalesReturn from "./components/SalesReturn";
+import SalesInvoicePage from "./components/SalesInvoicePage";
 import { PurchaseBillsPage } from "./components/PurchaseBillsPage";
 import { ImportPartiesPage } from "./components/ImportPartiesPage";
 import { ImportItemsPage } from "./components/ImportItemsPage";
@@ -31,32 +28,30 @@ import { PartiesPage } from "./components/PartiesPage";
 import CashReportPage from "./components/CashReportPage";
 import ReportsGallery from "./components/ReportsGallery";
 import ReportsPage from "./components/ReportsPage";
-
-// Expense & Other Income pages
 import { OtherIncomePage } from "./components/OtherIncomePage";
 import { ExpensePage } from "./components/ExpensePage";
 import ManageStaffsPage from "./components/ManageStaffsPage";
-
-// Manage Accounts page
+import BusinessCardGenerator from "./components/BusinessCardGenerator.jsx";
+import HelpSupport from "./components/HelpSupport";
+import HelpArticle from "./components/HelpArticle";
 import ManageAccountsPage from "./components/ManageAccountsPage";
-
-// Settings (nested)
 import SettingsPage from "./components/SettingsPage";
+import SupportMessages from "./components/SupportMessages";
+import ContactSupport from "./components/ContactSupport";
+import FeedbackModal from "./components/FeedbackModal";
+import Tutorials from "./components/Tutorials"; 
+import Reminders from "./components/Reminders";
+import BillGallery from "./components/BillGallery";
+import Notebook from "./components/Notebook";
+import CreateNote from "./components/CreateNote";
+
 
 export default function App() {
   const navigate = useNavigate();
-  const [reminders, setReminders] = useState([]);
-  const [showReminder, setShowReminder] = useState(false);
-
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  const handleSaveReminder = (reminder) => {
-    setReminders([...reminders, reminder]);
-  };
-
   return (
-    // make app full height and prevent body scrolling; only main will scroll
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden">
+    <div className="flex h-screen bg-gray-50 overflow-hidden">
       <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
       <div className="flex-1 flex flex-col">
@@ -66,48 +61,71 @@ export default function App() {
           setSidebarOpen={setSidebarOpen}
         />
 
-        {/* main takes remaining space and is the only scrollable area */}
         <main className="p-6 flex-1 overflow-auto">
           <Routes>
-            <Route path="/" element={<Dashboard sidebarOpen={sidebarOpen} />} />
-            <Route path="/add-sales" element={<AddSales sidebarOpen={sidebarOpen} />} />
-            <Route path="/add-purchase" element={<AddPurchase sidebarOpen={sidebarOpen} />} />
-            <Route path="/payment-in" element={<PaymentInForm sidebarOpen={sidebarOpen} />} />
-            <Route path="/payment-out" element={<PaymentOutForm sidebarOpen={sidebarOpen} />} />
-            <Route path="/quotation" element={<Quotation sidebarOpen={sidebarOpen} />} />
-            <Route path="/sales-return" element={<SalesReturn sidebarOpen={sidebarOpen} />} />
-            <Route path="/purchase-return" element={<PurchaseReturn sidebarOpen={sidebarOpen} />} />
-            <Route path="/sale-insights" element={<SaleInsights sidebarOpen={sidebarOpen} />} />
-            <Route path="/purchase-insights" element={<PurchaseInsights sidebarOpen={sidebarOpen} />} />
-            <Route path="/expense-insights" element={<ExpenseInsights sidebarOpen={sidebarOpen} />} />
-            <Route path="/quick-pos" element={<QuickPOS sidebarOpen={sidebarOpen} />} />
-            <Route path="/complete-profile" element={<CompleteProfile sidebarOpen={sidebarOpen} />} />
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/add-sales" element={<AddSales />} />
+            <Route path="/add-purchase" element={<AddPurchase />} />
+            <Route path="/quick-pos" element={<QuickPOS />} />
+            <Route path="/complete-profile" element={<CompleteProfile />} />
+            <Route path="/payment-in" element={<PaymentInForm />} />
+            <Route path="/payment-out" element={<PaymentOutForm />} />
 
-            <Route path="/sales-invoice" element={<SalesInvoicePage sidebarOpen={sidebarOpen} />} />
-            <Route path="/purchase-bills" element={<PurchaseBillsPage sidebarOpen={sidebarOpen} />} />
-            <Route path="/import-parties" element={<ImportPartiesPage sidebarOpen={sidebarOpen} />} />
-            <Route path="/import-items" element={<ImportItemsPage sidebarOpen={sidebarOpen} />} />
-            <Route path="/inventory" element={<InventoryPage sidebarOpen={sidebarOpen} />} />
-            <Route path="/parties" element={<PartiesPage sidebarOpen={sidebarOpen} />} />
+            {/* Quotations */}
+            <Route path="/quotation" element={<Quotation />} />
+            <Route path="/quotation/create" element={<CreateQuotation />} />
+
+            <Route path="/sale-insights" element={<SaleInsights />} />
+            <Route path="/purchase-insights" element={<PurchaseInsights />} />
+            <Route path="/expense-insights" element={<ExpenseInsights />} />
+
+            <Route path="/sales-return" element={<SalesReturn />} />
+            <Route path="/purchase-return" element={<PurchaseReturn />} />
+
+            <Route path="/sales-invoice" element={<SalesInvoicePage />} />
+            <Route path="/purchase-bills" element={<PurchaseBillsPage />} />
+            <Route path="/import-parties" element={<ImportPartiesPage />} />
+            <Route path="/import-items" element={<ImportItemsPage />} />
+            <Route path="/inventory" element={<InventoryPage />} />
+            <Route path="/parties" element={<PartiesPage />} />
+
             <Route path="/cash-report/:accountId" element={<CashReportPage />} />
-            <Route path="/reports/:reportId" element={<ReportsPage />} />
+            <Route path="/cash-report" element={<CashReportPage />} />
 
-            {/* pages we added */}
-            <Route path="/expense" element={<ExpensePage sidebarOpen={sidebarOpen} />} />
-            <Route path="/other-income" element={<OtherIncomePage sidebarOpen={sidebarOpen} />} />
-            <Route path="/accounts" element={<ManageAccountsPage sidebarOpen={sidebarOpen} />} />
+            <Route path="/reports-gallery" element={<ReportsGallery />} />
+            <Route path="/reports" element={<ReportsPage />} />
 
-            <Route path="/settings/*" element={<SettingsPage sidebarOpen={sidebarOpen} />} />
-            <Route path="/reports" element={<ReportsGallery sidebarOpen={sidebarOpen} />} />
-            <Route path="/manage-staffs" element={<ManageStaffsPage sidebarOpen={sidebarOpen} />} />
+            <Route path="/other-income" element={<OtherIncomePage />} />
+            <Route path="/expense" element={<ExpensePage />} />
+            <Route path="/manage-staffs" element={<ManageStaffsPage />} />
+            <Route path="/business-card" element={<BusinessCardGenerator />} />
+
+            <Route path="/help-support" element={<HelpSupport />} />
+            <Route path="/help" element={<HelpSupport />} />
+            <Route path="/help/:slug" element={<HelpArticle />} />
+
+            <Route path="/support/messages" element={<SupportMessages />} />
+            <Route path="/support" element={<ContactSupport />} />
+            <Route path="/feedback" element={<FeedbackModal />} />
+            <Route path="/support/callback" element={<HelpSupport />} />
+            <Route path="/tutorials" element={<Tutorials />} />
+             <Route path="/reminders" element={<Reminders />} />
+             <Route path="/bill-gallery" element={<BillGallery />} />
+             <Route path="/notebook" element={<Notebook />} />
+             <Route path="/create-note" element={<CreateNote />} />
+
+
+
+
+            <Route
+              path="/manage-accounts"
+              element={<ManageAccountsPage sidebarOpen={sidebarOpen} />}
+            />
+
+            <Route path="/settings/*" element={<SettingsPage />} />
           </Routes>
         </main>
       </div>
-
-      {/* Reminder popup */}
-      {showReminder && (
-        <AddReminder onClose={() => setShowReminder(false)} onSave={handleSaveReminder} />
-      )}
     </div>
   );
 }

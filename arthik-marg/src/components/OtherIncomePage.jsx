@@ -1,432 +1,448 @@
 // src/components/OtherIncomePage.jsx
-import React, { useState, useContext } from "react";
-import { Plus, X, Calendar } from "lucide-react";
-import { ThemeContext } from "../context/ThemeContext";
+import React, { useEffect, useRef, useState } from "react";
+import { Plus, X, Calendar, Camera } from "lucide-react";
 
-/**
- * Theme-aware OtherIncomePage
- * - Reads current theme from ThemeContext and uses CSS variables (with sensible fallbacks)
- * - Uses a light grey page background and theme primary color for actions
- * - Keeps original UX but applies theme styles consistently
- *
- * Usage:
- * <OtherIncomePage sidebarOpen={sidebarOpen} />
- */
+/* ---------------------------
+   CategorySelect
+   - Arrow is a clickable element
+   - Dropdown shows list only (no search)
+   - Hover / keyboard highlight uses blue bar with white text
+   - Closes on outside click
+   - Exposes value via onChange(cat)
+   --------------------------- */
+function CategorySelect({ value, onChange, categories = [] }) {
+  const [open, setOpen] = useState(false);
+  const [highlight, setHighlight] = useState(0);
+  const rootRef = useRef(null);
+  const listRef = useRef(null);
 
-export function OtherIncomePage({ sidebarOpen = false }) {
-  const { theme } = useContext(ThemeContext || {});
+  useEffect(() => {
+    function onDocClick(e) {
+      if (rootRef.current && !rootRef.current.contains(e.target)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, []);
 
+  useEffect(() => {
+    if (open) {
+      const el = listRef.current?.children?.[highlight];
+      if (el) el.scrollIntoView({ block: "nearest" });
+    } else {
+      setHighlight(0);
+    }
+  }, [open, highlight]);
+
+  function onKeyDown(e) {
+    if (!open) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setHighlight((h) => Math.min(h + 1, categories.length - 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setHighlight((h) => Math.max(h - 1, 0));
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      const sel = categories[highlight];
+      if (sel) {
+        onChange(sel);
+        setOpen(false);
+      }
+    } else if (e.key === "Escape") {
+      setOpen(false);
+    }
+  }
+
+  return (
+    <div
+      className="relative"
+      ref={rootRef}
+      onKeyDown={onKeyDown}
+      tabIndex={0}
+      aria-haspopup="listbox"
+      aria-expanded={open}
+      style={{ outline: "none" }}
+    >
+      {/* Control */}
+      <div
+        className="w-full px-3 py-3 border rounded-md flex items-center justify-between cursor-pointer"
+        style={{ borderColor: "rgba(34,197,94,0.25)", background: "#fff" }}
+        onClick={() => setOpen((s) => !s)}
+        role="button"
+      >
+        <div style={{ minWidth: 0 }}>
+          {value ? <div className="truncate text-gray-800">{value}</div> : <div className="text-gray-400">Search for category</div>}
+        </div>
+
+        {/* Arrow button (clickable) */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setOpen((s) => !s);
+          }}
+          className="ml-2 p-1 rounded"
+          aria-label="Toggle categories"
+          style={{ background: "transparent", border: "none", cursor: "pointer" }}
+        >
+          ▾
+        </button>
+      </div>
+
+      {/* Dropdown list */}
+      {open && (
+        <div
+          className="absolute z-40 mt-2 w-full bg-white border rounded-md overflow-hidden"
+          style={{ borderColor: "rgba(0,0,0,0.08)", boxShadow: "none" }}
+          role="listbox"
+        >
+          <div ref={listRef} className="max-h-48 overflow-auto">
+            {categories.map((cat, i) => {
+              const isHighlighted = i === highlight;
+              return (
+                <div
+                  key={cat}
+                  onMouseEnter={() => setHighlight(i)}
+                  onClick={() => {
+                    onChange(cat);
+                    setOpen(false);
+                  }}
+                  className={`px-4 py-3 cursor-pointer select-none ${isHighlighted ? "bg-blue-600 text-white" : "text-gray-800"}`}
+                  style={{ borderBottom: "1px solid rgba(0,0,0,0.04)" }}
+                >
+                  <div className="truncate">{cat}</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ---------------------------
+   OtherIncomePage - full page + modal
+   --------------------------- */
+export function OtherIncomePage({ sidebarOpen = true }) {
   const expandedWidth = "24rem";
   const COLLAPSED_MARGIN = "4rem";
   const sidebarOffset = sidebarOpen ? expandedWidth : COLLAPSED_MARGIN;
 
   const [showAddIncome, setShowAddIncome] = useState(false);
+  const [incomes, setIncomes] = useState([]);
 
-  const [form, setForm] = useState({
-    incomeNo: 1,
-    date: new Date().toISOString().slice(0, 10),
-    category: "",
-    items: [],
-    totalAmount: "",
-    paymentMethod: "Cash",
-    remarks: "",
-    attachments: [],
-  });
+  // form state
+  const [incomeNo, setIncomeNo] = useState(1);
+  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [category, setCategory] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("Cash");
+  const [remarks, setRemarks] = useState("");
+  const [attachments, setAttachments] = useState([]);
+  const [items, setItems] = useState([]);
 
-  const categories = ["Grants & Funding", "Sponsorships", "Investments", "Commission"];
+  const categories = [
+    "Grants & Funding",
+    "Sponsorships",
+    "Investments",
+    "Commission",
+    "Interest",
+    "Rent",
+    "Refund",
+    "Other",
+  ];
 
-  function handleChange(e) {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+  // computed total
+  const total = items.reduce((sum, it) => sum + (parseFloat(it.amount || 0) || 0), 0);
+
+  useEffect(() => {
+    setIncomeNo((n) => (n || 1));
+  }, []);
+
+  function addItem() {
+    setItems((prev) => [...prev, { desc: "", qty: "", rate: "", amount: "" }]);
   }
 
-  function addIncomeItem() {
-    setForm((prev) => ({ ...prev, items: [...prev.items, { description: "", qty: "", rate: "", amount: "" }] }));
-  }
+  function updateItem(idx, field, value) {
+    setItems((prev) => {
+      const next = [...prev];
+      next[idx] = { ...next[idx], [field]: value };
 
-  function handleItemChange(idx, field, value) {
-    setForm((prev) => {
-      const items = [...prev.items];
-      items[idx] = { ...(items[idx] || {}), [field]: value };
-      const qty = parseFloat(items[idx].qty) || 0;
-      const rate = parseFloat(items[idx].rate) || 0;
-      items[idx].amount = qty * rate || "";
-      return { ...prev, items };
+      const qty = parseFloat(next[idx].qty) || 0;
+      const rate = parseFloat(next[idx].rate) || 0;
+      next[idx].amount = qty && rate ? (qty * rate).toFixed(2) : next[idx].amount || "";
+      return next;
     });
   }
 
-  function removeIncomeItem(idx) {
-    setForm((prev) => ({ ...prev, items: prev.items.filter((_, i) => i !== idx) }));
+  function removeItem(idx) {
+    setItems((prev) => prev.filter((_, i) => i !== idx));
   }
 
-  function recalcTotal() {
-    const total = form.items.reduce((sum, it) => sum + (parseFloat(it.amount) || 0), 0);
-    setForm((prev) => ({ ...prev, totalAmount: total ? total.toFixed(2) : "" }));
-  }
-
-  function handleFileChange(e) {
+  function handleAttach(e) {
     const files = Array.from(e.target.files || []);
-    setForm((prev) => ({ ...prev, attachments: [...prev.attachments, ...files] }));
+    if (files.length) setAttachments((prev) => [...prev, ...files]);
+    e.target.value = null;
   }
 
   function removeAttachment(i) {
-    setForm((prev) => ({ ...prev, attachments: prev.attachments.filter((_, idx) => idx !== i) }));
+    setAttachments((prev) => prev.filter((_, idx) => idx !== i));
   }
 
-  function handleSave(e, resetAfter = false) {
+  function handleSave(e) {
     e?.preventDefault?.();
-    recalcTotal();
-    // TODO: submit to API
-    console.log("Save Income:", form);
 
-    if (resetAfter) {
-      setForm({
-        incomeNo: form.incomeNo + 1,
-        date: new Date().toISOString().slice(0, 10),
-        category: "",
-        items: [],
-        totalAmount: "",
-        paymentMethod: "Cash",
-        remarks: "",
-        attachments: [],
-      });
-    } else {
-      setShowAddIncome(false);
+    if (!category && items.length === 0) {
+      alert("Please select a category or add at least one income item.");
+      return;
     }
+
+    const payload = {
+      incomeNo,
+      date,
+      category,
+      paymentMethod,
+      remarks,
+      items,
+      total: parseFloat(total.toFixed ? total.toFixed(2) : total),
+      attachments,
+    };
+
+    console.log("Saving income", payload);
+
+    setIncomes((prev) => [{ id: Date.now(), ...payload }, ...prev]);
+
+    // reset & close
+    setItems([]);
+    setCategory("");
+    setPaymentMethod("Cash");
+    setRemarks("");
+    setAttachments([]);
+    setShowAddIncome(false);
+    setIncomeNo((n) => n + 1);
   }
-
-  // theme-aware CSS variables with fallbacks
-  const vars = {
-    primary: "var(--primary-500, #174552)",
-    primaryHover: "var(--primary-600, #11303F)",
-    bg: "var(--bg-default, #ffffff)",
-    pageBg: "var(--surface-200, #f3f4f6)", // light grey page background
-    text: "var(--text-default, #0f172a)",
-    muted: "var(--muted, rgba(0,0,0,0.6))",
-    border: "var(--border, rgba(0,0,0,0.06))",
-    success: "var(--success, #16a34a)",
-  };
-
-  const pageStyle = {
-    left: sidebarOffset,
-    width: `calc(100% - ${sidebarOffset})`,
-    top: "4rem",
-    right: 0,
-    bottom: 0,
-    position: "fixed",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: "2rem",
-    background: vars.pageBg,
-    color: vars.text,
-  };
-
-  const cardStyle = {
-    width: "100%",
-    maxWidth: 820,
-    borderRadius: 12,
-    padding: "1.75rem 1.5rem",
-    background: vars.bg,
-    border: `1px solid ${vars.border}`,
-    boxShadow: "0 6px 18px rgba(2,6,23,0.06)",
-    textAlign: "center",
-  };
-
-  const primaryBtn = {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 10,
-    padding: "10px 16px",
-    borderRadius: 10,
-    fontWeight: 700,
-    cursor: "pointer",
-    background: vars.primary,
-    color: "#fff",
-    border: "1px solid transparent",
-  };
-
-  const secondaryBtn = {
-    padding: "8px 12px",
-    borderRadius: 8,
-    background: "transparent",
-    border: `1px solid ${vars.border}`,
-    color: vars.text,
-    cursor: "pointer",
-  };
 
   return (
-    <div style={pageStyle} aria-live="polite">
-      <div style={cardStyle} className="px-4">
-        {/* Illustration */}
-        <div className="flex justify-center mb-4" aria-hidden>
-          <svg width="160" height="160" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="100" cy="100" r="80" fill="#E5E7EB" />
-            <rect x="55" y="40" width="90" height="30" rx="6" fill="#9CA3AF" />
-            <rect x="55" y="75" width="90" height="90" rx="10" fill="white" />
-            <rect x="65" y="90" width="50" height="6" rx="3" fill="#D1D5DB" />
-            <rect x="65" y="105" width="70" height="6" rx="3" fill="#D1D5DB" />
-            <rect x="65" y="120" width="60" height="6" rx="3" fill="#D1D5DB" />
-            <rect x="65" y="135" width="40" height="6" rx="3" fill="#D1D5DB" />
-          </svg>
-        </div>
+    <>
+      {/* Main area: centered empty state or list */}
+      <div
+        className="fixed top-16 right-0 bottom-0 overflow-auto flex flex-col items-center justify-center"
+        style={{
+          left: sidebarOffset,
+          width: `calc(100% - ${sidebarOffset})`,
+          background: "#fff",
+        }}
+      >
+        {incomes.length === 0 ? (
+          <div className="flex flex-col items-center text-center px-4">
+            <img src="https://cdn-icons-png.flaticon.com/512/2921/2921222.png" alt="" className="w-40 h-40 opacity-90 mb-6" />
+            <h2 className="text-2xl font-semibold text-gray-800 mb-2">Create Your First Income</h2>
+            <p className="text-gray-500 max-w-sm mb-6">Click on the create income button and start managing your incomes</p>
 
-        <h2 className="text-2xl font-bold" style={{ color: vars.text }}>
-          Create Your First Income
-        </h2>
+            <button
+              onClick={() => setShowAddIncome(true)}
+              className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium transition"
+            >
+              <Plus size={16} />
+              Add New Income
+            </button>
+          </div>
+        ) : (
+          <div className="p-6 w-full max-w-4xl">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold">Other Income</h2>
+              <button onClick={() => setShowAddIncome(true)} className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg">
+                <Plus size={16} /> Add Income
+              </button>
+            </div>
 
-        <p className="text-base max-w-md" style={{ color: vars.muted }}>
-          Click on the create income button and start managing your incomes
-        </p>
-
-        <button
-          onClick={() => setShowAddIncome(true)}
-          style={primaryBtn}
-          className="mt-4"
-          aria-label="Add New Income"
-        >
-          <Plus size={18} />
-          Add New Income
-        </button>
+            <div className="space-y-3">
+              {incomes.map((inc) => (
+                <div key={inc.id} className="border rounded-md p-3" style={{ borderColor: "rgba(0,0,0,0.04)" }}>
+                  <div className="flex justify-between">
+                    <div>
+                      <div className="font-medium">Rs. {inc.total}</div>
+                      <div className="text-sm text-gray-500">{inc.category || "-"}</div>
+                    </div>
+                    <div className="text-sm text-gray-500">{inc.date}</div>
+                  </div>
+                  {inc.remarks && <div className="mt-2 text-sm text-gray-600">{inc.remarks}</div>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Modal */}
+      {/* Add Income Modal */}
       {showAddIncome && (
-        <div
-          className="fixed inset-0 z-50 flex items-start justify-center"
-          style={{ left: sidebarOffset, width: `calc(100% - ${sidebarOffset})` }}
-        >
-          {/* backdrop */}
-          <div className="absolute inset-0" onClick={() => setShowAddIncome(false)} style={{ background: "rgba(2,6,23,0.45)" }} />
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-auto" style={{ paddingTop: "2.5rem", paddingLeft: sidebarOffset }}>
+          {/* Backdrop */}
+          <div className="absolute inset-0" onClick={() => setShowAddIncome(false)} style={{ background: "rgba(0,0,0,0.35)" }} aria-hidden="true" />
 
+          {/* Modal panel */}
           <div
-            className="relative z-10 mt-12 w-full max-w-3xl"
+            className="relative z-10 bg-white rounded-md mx-4"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Add Income"
             style={{
-              background: vars.bg,
-              borderRadius: 12,
-              boxShadow: "0 10px 40px rgba(2,6,23,0.15)",
+              width: "720px",
+              maxWidth: "calc(100% - 48px)",
+              maxHeight: "80vh",
               overflow: "hidden",
+              border: "1px solid rgba(0,0,0,0.06)",
+              borderRadius: 10,
+              boxShadow: "0 8px 40px rgba(2,6,23,0.08)",
             }}
           >
-            {/* header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: vars.border }}>
-              <h3 className="text-lg font-semibold" style={{ color: vars.text }}>
-                Add Income
-              </h3>
-              <button
-                className="p-2 rounded hover:bg-gray-100"
-                onClick={() => setShowAddIncome(false)}
-                aria-label="Close"
-                style={{ color: vars.muted }}
-              >
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: "1px solid rgba(0,0,0,0.04)" }}>
+              <h3 className="text-lg font-semibold">Add Income</h3>
+              <button onClick={() => setShowAddIncome(false)} className="p-2 rounded hover:bg-gray-100" aria-label="Close">
                 <X size={18} />
               </button>
             </div>
 
-            {/* body */}
-            <form onSubmit={(e) => handleSave(e, false)} className="max-h-[70vh] overflow-y-auto px-6 py-4 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm" style={{ color: vars.muted }}>
-                    Income No.
-                  </label>
-                  <div className="flex items-center gap-3 mt-1">
-                    <input
-                      name="incomeNo"
-                      value={form.incomeNo}
-                      onChange={(e) => setForm((prev) => ({ ...prev, incomeNo: e.target.value }))}
-                      className="w-full rounded-lg px-4 py-2"
-                      style={{ border: `1px solid ${vars.border}`, background: "transparent", color: vars.text }}
-                    />
-                    <span className="text-sm font-medium" style={{ color: vars.primary }}>
-                      Manual
-                    </span>
+            {/* Scrollable form body */}
+            <div className="px-6 py-4 overflow-y-auto" style={{ maxHeight: "calc(80vh - 140px)" }}>
+              <form onSubmit={handleSave} className="space-y-4">
+                {/* Income No & Date */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Income No.</label>
+                    <div className="mt-2 flex items-center gap-3">
+                      <input value={incomeNo} onChange={(e) => setIncomeNo(e.target.value)} className="w-full rounded-md px-3 py-2 border" style={{ borderColor: "rgba(0,0,0,0.06)" }} />
+                      <span className="text-sm text-green-600 font-medium">Manual</span>
+                    </div>
                   </div>
-                </div>
 
-                <div>
-                  <label className="text-sm" style={{ color: vars.muted }}>
-                    Date
-                  </label>
-                  <div className="relative mt-1">
-                    <input
-                      type="date"
-                      name="date"
-                      value={form.date}
-                      onChange={handleChange}
-                      className="w-full rounded-lg px-4 py-2 pr-10"
-                      style={{ border: `1px solid ${vars.border}`, background: "transparent", color: vars.text }}
-                    />
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: vars.muted }}>
-                      <Calendar size={16} />
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Date</label>
+                    <div className="mt-2 relative">
+                      <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full rounded-md px-3 py-2 border pr-10" style={{ borderColor: "rgba(0,0,0,0.06)" }} />
+                      <div className="absolute right-3 top-2.5 text-gray-500">
+                        <Calendar size={18} />
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Category */}
-              <div>
-                <label className="text-sm" style={{ color: vars.muted }}>
-                  Income Category
-                </label>
-                <select
-                  name="category"
-                  value={form.category}
-                  onChange={handleChange}
-                  className="mt-1 w-full rounded-lg px-4 py-3"
-                  style={{ border: `1px solid ${vars.border}`, background: "transparent", color: vars.text }}
-                >
-                  <option value="">Select category</option>
-                  {categories.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                {/* Category */}
+                <div>
+                  <label className="text-sm font-medium text-gray-700">Income Category</label>
+                  <div className="mt-2">
+                    <CategorySelect value={category} onChange={setCategory} categories={categories} />
+                  </div>
+                </div>
 
-              <div>
-                <button type="button" onClick={addIncomeItem} style={{ color: vars.primary, fontWeight: 600 }} className="inline-flex items-center gap-2">
-                  <Plus size={14} /> Add Income Item
-                </button>
-              </div>
+                {/* Add Income Item */}
+                <div>
+                  <button type="button" onClick={addItem} className="flex items-center gap-2 text-green-600 font-medium">
+                    <Plus size={14} /> Add Income Item
+                  </button>
+                </div>
 
-              {/* Items */}
-              <div className="space-y-3">
-                {form.items.length === 0 && <div className="text-sm" style={{ color: vars.muted }}>No items added yet.</div>}
+                {/* Items list */}
+                {items.map((it, idx) => (
+                  <div key={idx} className="bg-white border rounded-md p-3 mt-2" style={{ borderColor: "rgba(0,0,0,0.04)" }}>
+                    <div className="flex justify-between items-start gap-3">
+                      <div className="flex-1">
+                        <label className="text-sm text-gray-600">Description</label>
+                        <input value={it.desc} onChange={(e) => updateItem(idx, "desc", e.target.value)} className="w-full mt-1 rounded-md px-3 py-2 border" style={{ borderColor: "rgba(0,0,0,0.06)" }} />
+                      </div>
 
-                {form.items.map((it, idx) => (
-                  <div key={idx} className="border rounded-lg p-3" style={{ borderColor: vars.border }}>
-                    <div className="flex justify-between items-center mb-2">
-                      <div className="text-sm font-medium" style={{ color: vars.text }}>Item {idx + 1}</div>
-                      <button type="button" onClick={() => removeIncomeItem(idx)} className="text-sm" style={{ color: "#dc2626" }}>
-                        Remove
-                      </button>
-                    </div>
+                      <div className="w-24">
+                        <label className="text-sm text-gray-600">Qty</label>
+                        <input value={it.qty} onChange={(e) => updateItem(idx, "qty", e.target.value)} className="w-full mt-1 rounded-md px-3 py-2 border" style={{ borderColor: "rgba(0,0,0,0.06)" }} type="number" min="0" />
+                      </div>
 
-                    <div className="grid grid-cols-6 gap-2">
-                      <input
-                        placeholder="Description"
-                        className="col-span-3 rounded px-3 py-2"
-                        value={it.description || ""}
-                        onChange={(e) => handleItemChange(idx, "description", e.target.value)}
-                        style={{ border: `1px solid ${vars.border}`, background: "transparent", color: vars.text }}
-                      />
-                      <input
-                        placeholder="Qty"
-                        className="col-span-1 rounded px-3 py-2"
-                        value={it.qty || ""}
-                        onChange={(e) => handleItemChange(idx, "qty", e.target.value)}
-                        style={{ border: `1px solid ${vars.border}`, background: "transparent", color: vars.text }}
-                      />
-                      <input
-                        placeholder="Rate"
-                        className="col-span-1 rounded px-3 py-2"
-                        value={it.rate || ""}
-                        onChange={(e) => handleItemChange(idx, "rate", e.target.value)}
-                        style={{ border: `1px solid ${vars.border}`, background: "transparent", color: vars.text }}
-                      />
-                      <input
-                        placeholder="Amount"
-                        className="col-span-1 rounded px-3 py-2"
-                        value={it.amount || ""}
-                        readOnly
-                        style={{ border: `1px solid ${vars.border}`, background: "transparent", color: vars.text }}
-                      />
+                      <div className="w-28">
+                        <label className="text-sm text-gray-600">Rate</label>
+                        <input value={it.rate} onChange={(e) => updateItem(idx, "rate", e.target.value)} className="w-full mt-1 rounded-md px-3 py-2 border" style={{ borderColor: "rgba(0,0,0,0.06)" }} type="number" min="0" step="0.01" />
+                      </div>
+
+                      <div className="w-28">
+                        <label className="text-sm text-gray-600">Amount</label>
+                        <input value={it.amount} readOnly className="w-full mt-1 rounded-md px-3 py-2 border bg-gray-50" style={{ borderColor: "rgba(0,0,0,0.06)" }} />
+                      </div>
+
+                      <div className="pt-6">
+                        <button type="button" onClick={() => removeItem(idx)} className="text-red-500 hover:text-red-600 p-1">
+                          <X size={16} />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
-              </div>
 
-              <div className="grid grid-cols-2 gap-4 border-t pt-4">
-                <div>
-                  <label className="text-sm" style={{ color: vars.muted }}>Total Amount</label>
-                  <div className="mt-1 flex">
-                    <span className="inline-flex items-center px-3 rounded-l-lg border border-r-0" style={{ borderColor: vars.border, background: "var(--surface-100,#f8fafc)" }}>
-                      Rs.
-                    </span>
-                    <input
-                      name="totalAmount"
-                      value={form.totalAmount}
-                      onChange={handleChange}
-                      className="w-full rounded-r-lg px-4 py-2"
-                      style={{ border: `1px solid ${vars.border}`, background: "transparent", color: vars.text }}
-                    />
+                {/* Divider */}
+                <div className="border-t" style={{ borderColor: "rgba(0,0,0,0.06)" }} />
+
+                {/* Total & Payment method */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Total Amount</label>
+                    <div className="mt-2 flex">
+                      <span className="inline-flex items-center px-3 rounded-l-md border border-r-0" style={{ background: "#f8fafc", borderColor: "rgba(0,0,0,0.06)" }}>Rs.</span>
+                      <input value={total ? total.toFixed(2) : ""} readOnly className="w-full rounded-r-md px-3 py-2 border bg-gray-50" style={{ borderColor: "rgba(0,0,0,0.06)" }} />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Payment Method</label>
+                    <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} className="mt-2 w-full rounded-md px-3 py-2 border" style={{ borderColor: "rgba(0,0,0,0.06)" }}>
+                      <option>Cash</option>
+                      <option>Bank</option>
+                      <option>Mobile Wallet</option>
+                    </select>
                   </div>
                 </div>
 
+                {/* Remarks */}
                 <div>
-                  <label className="text-sm" style={{ color: vars.muted }}>Payment Method</label>
-                  <select
-                    name="paymentMethod"
-                    value={form.paymentMethod}
-                    onChange={handleChange}
-                    className="mt-1 w-full rounded-lg px-4 py-2"
-                    style={{ border: `1px solid ${vars.border}`, background: "transparent", color: vars.text }}
-                  >
-                    <option>Cash</option>
-                    <option>Bank Transfer</option>
-                    <option>Card</option>
-                    <option>Other</option>
-                  </select>
+                  <label className="text-sm font-medium text-gray-700">Remarks</label>
+                  <textarea value={remarks} onChange={(e) => setRemarks(e.target.value)} rows={3} className="w-full mt-2 rounded-md px-3 py-2 border" style={{ borderColor: "rgba(0,0,0,0.06)", background: "#fff" }} />
                 </div>
-              </div>
 
-              <div>
-                <label className="text-sm" style={{ color: vars.muted }}>Remarks</label>
-                <textarea
-                  name="remarks"
-                  value={form.remarks}
-                  onChange={handleChange}
-                  placeholder="Enter remarks here..."
-                  className="mt-1 w-full rounded-lg px-4 py-3 min-h-[80px]"
-                  style={{ border: `1px solid ${vars.border}`, background: "transparent", color: vars.text }}
-                />
-              </div>
+                {/* Attachments */}
+                <div>
+                  <label className="text-sm font-medium text-gray-700">Attachments</label>
+                  <div className="mt-2 flex items-center gap-3">
+                    <label className="flex items-center gap-2 px-3 py-2 border rounded-md cursor-pointer" style={{ borderColor: "rgba(0,0,0,0.06)" }}>
+                      <Camera size={16} />
+                      <span className="text-sm">Upload</span>
+                      <input type="file" onChange={handleAttach} className="hidden" multiple />
+                    </label>
 
-              {/* Attachments */}
-              <div className="flex items-center gap-4">
-                <label className="w-20 h-20 rounded border border-dashed flex items-center justify-center cursor-pointer" title="Attach image" style={{ borderColor: vars.border }}>
-                  <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
-                  <div className="flex flex-col items-center text-sm" style={{ color: vars.muted }}>
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" className="mb-1">
-                      <path d="M4 7h4l2-2h4l2 2h4v12H4V7z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-                      <circle cx="12" cy="13" r="3" stroke="currentColor" strokeWidth="1.2" />
-                    </svg>
-                    Camera
+                    <div className="flex flex-wrap gap-2">
+                      {attachments.map((f, i) => (
+                        <div key={i} className="px-3 py-1 border rounded-md text-sm flex items-center gap-2" style={{ borderColor: "rgba(0,0,0,0.06)" }}>
+                          <span className="truncate max-w-xs">{f.name}</span>
+                          <button type="button" onClick={() => removeAttachment(i)} className="text-gray-500 hover:text-red-500">
+                            <X size={14} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </label>
-
-                <div className="flex gap-2 overflow-x-auto">
-                  {form.attachments.map((f, i) => {
-                    const url = URL.createObjectURL(f);
-                    return (
-                      <div key={i} className="relative w-20 h-20 rounded overflow-hidden border" style={{ borderColor: vars.border }}>
-                        <img src={url} alt={f.name} className="w-full h-full object-cover" />
-                        <button type="button" onClick={() => removeAttachment(i)} className="absolute -top-2 -right-2 bg-white rounded-full p-1 shadow" style={{ border: `1px solid ${vars.border}` }}>
-                          <X size={12} />
-                        </button>
-                      </div>
-                    );
-                  })}
                 </div>
+              </form>
+            </div>
+
+            {/* Sticky footer */}
+            <div style={{ borderTop: "1px solid rgba(0,0,0,0.04)" }}>
+              <div className="px-6 py-4 flex justify-end gap-3">
+                <button type="button" onClick={() => setShowAddIncome(false)} className="px-4 py-2 rounded-md border">Cancel</button>
+                <button type="button" onClick={handleSave} className="px-6 py-2 rounded-md bg-green-600 text-white">Save Income</button>
               </div>
-            </form>
-
-            {/* footer */}
-            <div className="flex items-center justify-end gap-3 p-4 border-t" style={{ borderColor: vars.border }}>
-              <button onClick={(e) => handleSave(e, true)} className="px-4 py-2 rounded-lg" style={{ background: "transparent", border: `1px solid ${vars.border}`, color: vars.text }}>
-                Save & New
-              </button>
-
-              <button onClick={(e) => handleSave(e, false)} className="px-5 py-2 rounded-lg" style={{ background: vars.primary, color: "#fff" }}>
-                Save Income
-              </button>
             </div>
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
 

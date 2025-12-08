@@ -1,170 +1,243 @@
 // src/components/PurchaseBillsPage.jsx
-import React, { useContext } from "react";
-import { Plus } from "lucide-react";
-import { ThemeContext } from "../context/ThemeContext"; // adjust path if your ThemeContext lives elsewhere
-import { useNavigate } from "react-router-dom";
+import React, { useState } from "react";
+import { Plus, X } from "lucide-react";
 
-/**
- * Theme-aware PurchaseBillsPage
- *
- * - Uses ThemeContext to read current theme (ThemeProvider should expose CSS variables).
- * - Page background uses a light grey surface from theme (--surface-200).
- * - Table / card uses --bg-default and border uses --border variable.
- * - Primary button uses --primary-500 and --primary-600.
- *
- * Props:
- *  - sidebarOpen (bool) — used to offset the page when sidebar is open
- *  - onCreate (func) — optional callback when user clicks Create Purchase Bill (fallback: navigate to /purchase-bills/create)
- */
+const CUSTOM_BLUE = "bg-[#172554]";
 
-export function PurchaseBillsPage({ sidebarOpen = false, onCreate }) {
-  const { theme } = useContext(ThemeContext || {});
-  const navigate = useNavigate();
+export function PurchaseBillsPage() {
+  const [showCreate, setShowCreate] = useState(false);
 
-  const expandedWidth = "24rem";
-  const COLLAPSED_MARGIN = "4rem";
-  const sidebarOffset = sidebarOpen ? expandedWidth : COLLAPSED_MARGIN;
+  const [form, setForm] = useState({
+    billNo: 1,
+    date: new Date().toISOString().slice(0, 10),
+    vendor: "",
+    items: [{ name: "", qty: 1, rate: 0, amount: 0 }],
+    notes: "",
+    total: 0,
+  });
 
-  // theme CSS variables (fallbacks provided)
-  const pageStyle = {
-    left: sidebarOffset,
-    width: `calc(100% - ${sidebarOffset})`,
-    top: "4rem", // match your app top offset
-    right: 0,
-    bottom: 0,
-    position: "fixed",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: "2rem",
-    background: "var(--surface-200, #f3f4f6)", // light grey background
-    color: "var(--text-default, #0f172a)",
-  };
+  function handleChange(e) {
+    const { name, value } = e.target;
+    setForm((p) => ({ ...p, [name]: value }));
+  }
 
-  const cardStyle = {
-    width: "100%",
-    maxWidth: 720,
-    borderRadius: 12,
-    padding: "2.25rem 2rem",
-    background: "var(--bg-default, #ffffff)",
-    border: `1px solid var(--border, rgba(15,23,42,0.06))`,
-    boxShadow: "0 6px 22px rgba(2,6,23,0.06)",
-    textAlign: "center",
-  };
+  function handleItemChange(idx, field, value) {
+    setForm((p) => {
+      const items = [...p.items];
+      items[idx] = { ...(items[idx] || {}), [field]: value };
 
-  const illustrationOuter = {
-    width: 160,
-    height: 160,
-    borderRadius: "50%",
-    background: "var(--surface-100, #eef2ff)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    margin: "0 auto 16px",
-  };
+      const qty = Number(items[idx].qty) || 0;
+      const rate = Number(items[idx].rate) || 0;
+      items[idx].amount = qty * rate;
 
-  const phoneStyle = {
-    width: 96,
-    height: 128,
-    background: "var(--bg-default, #ffffff)",
-    borderRadius: 12,
-    border: `1px solid var(--border, rgba(0,0,0,0.06))`,
-    padding: 12,
-    boxShadow: "inset 0 1px 0 rgba(0,0,0,0.02)",
-  };
+      const total = items.reduce((s, it) => s + (Number(it.amount) || 0), 0);
+      return { ...p, items, total };
+    });
+  }
 
-  const titleStyle = {
-    fontSize: 22,
-    fontWeight: 700,
-    marginBottom: 8,
-    color: "var(--text-default, #0f172a)",
-  };
+  function addItem() {
+    setForm((p) => ({ ...p, items: [...p.items, { name: "", qty: 1, rate: 0, amount: 0 }] }));
+  }
 
-  const descStyle = {
-    color: "var(--muted, rgba(0,0,0,0.6))",
-    maxWidth: 520,
-    margin: "0 auto 18px",
-  };
+  function removeItem(i) {
+    setForm((p) => {
+      const items = p.items.filter((_, idx) => idx !== i);
+      const total = items.reduce((s, it) => s + (Number(it.amount) || 0), 0);
+      return { ...p, items, total };
+    });
+  }
 
-  const primaryBtnStyle = {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 10,
-    padding: "10px 18px",
-    borderRadius: 10,
-    fontWeight: 700,
-    cursor: "pointer",
-    background: "var(--primary-500, #172554)",
-    color: "var(--text-on-primary, #ffffff)",
-    border: "1px solid transparent",
-    boxShadow: "0 6px 18px rgba(23,37,84,0.06)",
-    transition: "transform .08s ease, filter .08s ease",
-  };
+  function resetForm(nextBill = false) {
+    setForm({
+      billNo: nextBill ? form.billNo + 1 : 1,
+      date: new Date().toISOString().slice(0, 10),
+      vendor: "",
+      items: [{ name: "", qty: 1, rate: 0, amount: 0 }],
+      notes: "",
+      total: 0,
+    });
+  }
 
-  const primaryBtnHover = (e) => {
-    e.currentTarget.style.filter = "brightness(.94)";
-  };
-  const primaryBtnLeave = (e) => {
-    e.currentTarget.style.filter = "none";
-  };
+  function handleSave(e, saveNew = false) {
+    e?.preventDefault?.();
+    // Here you'd call your API to save `form`.
+    console.log("Saving Purchase Bill", form);
 
-  const handleCreate = () => {
-    if (typeof onCreate === "function") return onCreate();
-    // fallback route (adjust route if your app differs)
-    navigate("/purchase-bills/create");
-  };
+    if (saveNew) {
+      resetForm(true);
+      return;
+    }
+
+    setShowCreate(false);
+    resetForm(false);
+  }
 
   return (
-    <div style={pageStyle} aria-live="polite">
-      <div style={cardStyle} role="region" aria-label="Purchase bills empty state">
-        <div style={illustrationOuter} aria-hidden>
-          <div style={phoneStyle}>
-            <div style={{ height: 8, background: "var(--muted, rgba(0,0,0,0.08))", borderRadius: 6, marginBottom: 14 }} />
-            <div style={{ height: 8, width: "60%", background: "var(--muted, rgba(0,0,0,0.04))", borderRadius: 6, marginBottom: 8 }} />
-            <div style={{ height: 8, width: "80%", background: "var(--muted, rgba(0,0,0,0.04))", borderRadius: 6, marginBottom: 8 }} />
-            <div style={{ height: 8, width: "50%", background: "var(--muted, rgba(0,0,0,0.04))", borderRadius: 6, marginTop: 20 }} />
-          </div>
-        </div>
-
-        <h2 style={titleStyle}>Create Your First Purchase Bill</h2>
-
-        <p style={descStyle}>
+    <div className="p-6 flex flex-col items-center justify-center min-h-[60vh]">
+      {/* Illustration / empty state */}
+      <div className="max-w-lg w-full flex flex-col items-center text-center space-y-6 p-4">
+        <div className="w-40 h-40 bg-gray-100 rounded-full flex items-center justify-center mb-2" />
+        <h2 className="text-2xl font-bold text-gray-800">Create Your First Purchase Bill</h2>
+        <p className="text-gray-500 text-base max-w-md">
           Click on the Create Purchase Bill button and start managing your purchases.
         </p>
 
-        <div style={{ display: "flex", justifyContent: "center", gap: 12, marginTop: 8 }}>
+        <div className="flex items-center gap-4 pt-2">
           <button
-            type="button"
-            onClick={handleCreate}
-            onMouseEnter={primaryBtnHover}
-            onMouseLeave={primaryBtnLeave}
-            style={primaryBtnStyle}
-            aria-label="Create Purchase Bill"
-            title="Create Purchase Bill"
+            onClick={() => setShowCreate(true)}
+            className={`flex items-center gap-2 px-6 py-3 ${CUSTOM_BLUE} text-white rounded-lg font-semibold hover:bg-[#111A31] shadow-sm transition-colors`}
           >
-            <Plus size={18} />
+            <Plus size={20} />
             Create Purchase Bill
-          </button>
-
-          {/* optional secondary (ghost) action */}
-          <button
-            type="button"
-            onClick={() => navigate("/purchase-bills")} // adjust route if needed
-            style={{
-              padding: "10px 14px",
-              borderRadius: 10,
-              border: `1px solid var(--border, rgba(0,0,0,0.06))`,
-              background: "transparent",
-              color: "var(--text-default, #0f172a)",
-              cursor: "pointer",
-            }}
-            aria-label="View Purchase Bills"
-            title="View Purchase Bills"
-          >
-            View Purchase Bills
           </button>
         </div>
       </div>
+
+      {/* =========================
+           CENTERED MODAL (updated)
+         ========================= */}
+      {showCreate && (
+        <div className="fixed inset-0 z-[9999] bg-black/40 flex items-center justify-center p-4">
+          <div className="relative w-full max-w-2xl bg-white rounded-lg shadow-lg max-h-[90vh] overflow-hidden">
+            {/* close */}
+            <button
+              onClick={() => setShowCreate(false)}
+              className="absolute right-3 top-3 text-gray-500 hover:text-gray-800 z-10"
+              aria-label="Close"
+            >
+              <X size={20} />
+            </button>
+
+            {/* scrollable body */}
+            <div className="p-6 overflow-y-auto max-h-[82vh]">
+              <h3 className="text-xl font-semibold mb-4">New Purchase Bill</h3>
+
+              <form onSubmit={(e) => handleSave(e, false)} className="space-y-4">
+                {/* Basic row */}
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="text-sm text-gray-700">Bill No.</label>
+                    <input
+                      name="billNo"
+                      value={form.billNo}
+                      onChange={handleChange}
+                      className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-sm text-gray-700">Date</label>
+                    <input
+                      type="date"
+                      name="date"
+                      value={form.date}
+                      onChange={handleChange}
+                      className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-sm text-gray-700">Vendor</label>
+                    <input
+                      name="vendor"
+                      value={form.vendor}
+                      onChange={handleChange}
+                      placeholder="Search vendor..."
+                      className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2"
+                    />
+                  </div>
+                </div>
+
+                {/* Items */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-sm font-medium">Items</div>
+                    <button type="button" onClick={addItem} className="text-sm text-[#174552]">+ Add Item</button>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm border border-gray-200 rounded">
+                      <thead>
+                        <tr className="bg-gray-50">
+                          <th className="px-2 py-2 text-left">S.N.</th>
+                          <th className="px-2 py-2 text-left">Name</th>
+                          <th className="px-2 py-2 text-left">Qty</th>
+                          <th className="px-2 py-2 text-left">Rate</th>
+                          <th className="px-2 py-2 text-left">Amount</th>
+                          <th className="px-2 py-2 text-left">Remove</th>
+                        </tr>
+                      </thead>
+
+                      <tbody>
+                        {form.items.map((it, idx) => (
+                          <tr key={idx} className="border-b">
+                            <td className="px-2 py-2">{idx + 1}</td>
+                            <td className="px-2 py-2">
+                              <input
+                                value={it.name}
+                                onChange={(e) => handleItemChange(idx, "name", e.target.value)}
+                                className="w-full px-1 py-1 border rounded"
+                              />
+                            </td>
+                            <td className="px-2 py-2">
+                              <input
+                                type="number"
+                                min="1"
+                                value={it.qty}
+                                onChange={(e) => handleItemChange(idx, "qty", Number(e.target.value))}
+                                className="w-20 px-1 py-1 border rounded"
+                              />
+                            </td>
+                            <td className="px-2 py-2">
+                              <input
+                                type="number"
+                                min="0"
+                                value={it.rate}
+                                onChange={(e) => handleItemChange(idx, "rate", Number(e.target.value))}
+                                className="w-24 px-1 py-1 border rounded"
+                              />
+                            </td>
+                            <td className="px-2 py-2">Rs. {it.amount}</td>
+                            <td className="px-2 py-2">
+                              <button type="button" onClick={() => removeItem(idx)} className="text-red-600">Remove</button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Notes & Total */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm text-gray-700">Notes</label>
+                    <textarea
+                      value={form.notes}
+                      onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
+                      className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 min-h-[80px]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-sm text-gray-700">Total</label>
+                    <div className="mt-1 text-2xl font-semibold">Rs. {form.total}</div>
+                  </div>
+                </div>
+
+                {/* footer space to ensure content not hidden */}
+              </form>
+            </div>
+
+            {/* footer actions */}
+            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t bg-white">
+              <button onClick={(e) => handleSave(e, true)} className="px-4 py-2 rounded-md border bg-white">Save & New</button>
+              <button onClick={(e) => handleSave(e, false)} className="px-5 py-2 rounded-md bg-[#072255] text-white">Save Purchase Bill</button>
+              <button onClick={() => setShowCreate(false)} className="px-4 py-2 rounded-md bg-gray-100">Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

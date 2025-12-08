@@ -1,16 +1,6 @@
-// /mnt/data/Topbar.jsx
+// src/components/Topbar.jsx
 import { useState, useContext, useMemo } from "react";
-import {
-  Search,
-  Bell,
-  Keyboard,
-  Sun,
-  Moon,
-  Laptop,
-  User,
-  LogOut,
-} from "lucide-react";
-
+import { Search, Bell, Keyboard, Sun, Moon, Laptop, User, LogOut } from "lucide-react";
 import { ThemeContext } from "../context/ThemeContext";
 
 export default function Topbar({ onProfileClick }) {
@@ -41,34 +31,30 @@ export default function Topbar({ onProfileClick }) {
     }
   };
 
-  // EXACT colors requested:
-  // dark => dark background, white text
-  // light => white background, black text
-  // classic => cream background with white text
   const THEME_MAP = {
     light: {
       headerBg: "#ffffff",
-      headerText: "#0b1220", // black-ish
+      headerText: "#0b1220",
       inputBg: "#ffffff",
-      inputBorder: "#d1d5db", // gray-300
+      inputBorder: "#d1d5db",
       popoverBg: "#ffffff",
       popoverText: "#0b1220",
       hoverBg: "#f3f4f6",
       profileBg: "#172554",
     },
     dark: {
-      headerBg: "#0b1220", // deep dark
+      headerBg: "#0b1220",
       headerText: "#ffffff",
       inputBg: "#0b1220",
-      inputBorder: "#374151", // gray-700
+      inputBorder: "#374151",
       popoverBg: "#0b1220",
       popoverText: "#ffffff",
       hoverBg: "#0b1220",
       profileBg: "#172554",
     },
     classic: {
-      headerBg: "#F6E9D2", // cream
-      headerText: "#ffffff", // per your request
+      headerBg: "#F6E9D2",
+      headerText: "#ffffff",
       inputBg: "#F6E9D2",
       inputBorder: "#e8dcc6",
       popoverBg: "#F6E9D2",
@@ -80,7 +66,6 @@ export default function Topbar({ onProfileClick }) {
 
   const style = THEME_MAP[theme] || THEME_MAP.light;
 
-  // small helpers to apply inline style while keeping Tailwind fallbacks
   const headerStyle = {
     background: style.headerBg,
     color: style.headerText,
@@ -96,10 +81,6 @@ export default function Topbar({ onProfileClick }) {
     background: style.popoverBg,
     color: style.popoverText,
     borderColor: style.inputBorder,
-  };
-
-  const buttonHoverStyle = {
-    // not all hover states inline-friendly — use this for explicit elements if needed
   };
 
   return (
@@ -118,7 +99,6 @@ export default function Topbar({ onProfileClick }) {
             style={inputStyle}
             className="pl-10 pr-4 w-full py-2 rounded-lg border focus:outline-none focus:ring-2 transition-colors"
             placeholder="Search or create anything..."
-            placeholderTextColor={style.popoverText}
           />
           <div style={{ color: style.popoverText }} className="absolute left-3 top-2">
             <Search size={16} />
@@ -142,12 +122,8 @@ export default function Topbar({ onProfileClick }) {
           </button>
 
           {showShortcuts && (
-            <div
-              role="menu"
-              style={popoverStyle}
-              className="absolute right-0 mt-2 w-48 p-2 border rounded shadow-lg z-50"
-            >
-              <p className="text-sm">{/* text color inherited from inline style */}Ctrl + S: Save</p>
+            <div role="menu" style={popoverStyle} className="absolute right-0 mt-2 w-48 p-2 border rounded shadow-lg z-50">
+              <p className="text-sm">Ctrl + S: Save</p>
               <p className="text-sm">Ctrl + P: Print</p>
               <p className="text-sm">Ctrl + F: Search</p>
             </div>
@@ -172,11 +148,7 @@ export default function Topbar({ onProfileClick }) {
           </button>
 
           {showNotifications && (
-            <div
-              role="menu"
-              style={popoverStyle}
-              className="absolute right-0 mt-2 w-56 p-2 border rounded shadow-lg z-50"
-            >
+            <div role="menu" style={popoverStyle} className="absolute right-0 mt-2 w-56 p-2 border rounded shadow-lg z-50">
               <p className="text-sm">New message from John</p>
               <p className="text-sm">Server rebooted</p>
             </div>
@@ -197,11 +169,7 @@ export default function Topbar({ onProfileClick }) {
           </button>
 
           {showThemeMenu && (
-            <div
-              role="menu"
-              style={popoverStyle}
-              className="absolute right-0 mt-2 w-48 p-2 border rounded shadow-lg z-50"
-            >
+            <div role="menu" style={popoverStyle} className="absolute right-0 mt-2 w-48 p-2 border rounded shadow-lg z-50">
               {themeOptions.map((opt) => (
                 <button
                   key={opt.value}
@@ -235,11 +203,7 @@ export default function Topbar({ onProfileClick }) {
           </button>
 
           {showProfileMenu && (
-            <div
-              role="menu"
-              style={popoverStyle}
-              className="absolute right-0 mt-2 w-40 border rounded-xl shadow-lg z-50"
-            >
+            <div role="menu" style={popoverStyle} className="absolute right-0 mt-2 w-40 border rounded-xl shadow-lg z-50">
               <button
                 onClick={() => {
                   setShowProfileMenu(false);

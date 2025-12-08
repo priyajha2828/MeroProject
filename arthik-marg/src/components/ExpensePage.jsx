@@ -1,25 +1,32 @@
 // src/components/ExpensePage.jsx
-import React, { useState, useContext } from "react";
+import React, { useState, useRef, useEffect, useContext } from "react";
 import { Plus, X, Calendar } from "lucide-react";
 import { ThemeContext } from "../context/ThemeContext";
 
 /**
- * Theme-aware ExpensePage
- * - Uses ThemeContext (expects ThemeProvider to set CSS variables like --primary-500, --bg-default, --surface-200, --text-default, --border, --muted)
- * - Replaced green with theme primary color (blue by design of theme).
- * - Keeps the same UX as your original file but applies theme variables for colors/backgrounds/borders.
+ * ExpensePage
  *
- * Usage:
- * <ExpensePage sidebarOpen={sidebarOpen} />
+ * Props:
+ *  - sidebarOpen (bool) : layout offset when sidebar open
+ *  - directOpen (bool)  : open the form immediately (used for modal)
+ *  - embedded (bool)    : when true, no backdrop (parent provides ModalShell)
+ *  - onClose (fn)       : callback to notify parent to close wrapper
+ *
+ * Exported both as named and default to match different import styles.
  */
-
-export function ExpensePage({ sidebarOpen = false }) {
+export function ExpensePage({ sidebarOpen = false, directOpen = false, embedded = false, onClose: parentOnClose } = {}) {
+  // theme context (optional)
   const { theme } = useContext(ThemeContext || {});
+
   const expandedWidth = "24rem";
   const COLLAPSED_MARGIN = "4rem";
   const sidebarOffset = sidebarOpen ? expandedWidth : COLLAPSED_MARGIN;
 
-  const [showAddExpense, setShowAddExpense] = useState(false);
+  // form state
+  const [showAddExpense, setShowAddExpense] = useState(!!directOpen);
+  useEffect(() => {
+    if (directOpen) setShowAddExpense(true);
+  }, [directOpen]);
 
   const [form, setForm] = useState({
     expenseNo: 1,
@@ -32,6 +39,26 @@ export function ExpensePage({ sidebarOpen = false }) {
     attachments: [],
   });
 
+  const firstInputRef = useRef(null);
+
+  useEffect(() => {
+    if (showAddExpense && firstInputRef.current) {
+      firstInputRef.current.focus();
+    }
+  }, [showAddExpense]);
+
+  // categories
+  const categories = [
+    "Miscellaneous",
+    "Travel & Transportation",
+    "Repair & Maintenance",
+    "Marketing",
+    "Utilities",
+    "Bank Fees",
+    "Salaries and rent",
+  ];
+
+  // helpers
   function handleChange(e) {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
@@ -43,7 +70,7 @@ export function ExpensePage({ sidebarOpen = false }) {
       items[index] = { ...(items[index] || {}), [field]: value };
       const qty = parseFloat(items[index].qty) || 0;
       const rate = parseFloat(items[index].rate) || 0;
-      items[index].amount = qty * rate || "";
+      items[index].amount = qty && rate ? (qty * rate).toFixed(2) : "";
       return { ...prev, items };
     });
   }
@@ -79,33 +106,243 @@ export function ExpensePage({ sidebarOpen = false }) {
     setForm((prev) => ({ ...prev, totalAmount: total ? total.toFixed(2) : "" }));
   }
 
+  function resetForm() {
+    setForm({
+      expenseNo: form.expenseNo + 1,
+      date: new Date().toISOString().slice(0, 10),
+      category: "",
+      items: [],
+      totalAmount: "",
+      paymentMethod: "Cash",
+      remarks: "",
+      attachments: [],
+    });
+  }
+
   function handleSave(e) {
     if (e && e.preventDefault) e.preventDefault();
     recalcTotal();
-    // TODO: Replace with API call
+    // TODO: call API here
     console.log("Saving expense:", form);
+
+    // close modal / reset
     setShowAddExpense(false);
-    // optionally reset form here
+    resetForm();
+
+    // notify parent (Dashboard ModalShell) to close if provided
+    if (parentOnClose) parentOnClose();
   }
 
-  const categories = [
-    "Miscellaneous",
-    "Travel & Transportation",
-    "Repair & Maintenance",
-    "Marketing",
-    "Utilities",
-    "Bank Fees",
-    "Salaries and rent",
-  ];
+  /* --- Panel (inner content) --- */
+  const Panel = (
+    <div className="w-full max-w-[820px] bg-white rounded-lg shadow-lg flex flex-col overflow-hidden" role="dialog" aria-modal="true">
+      {/* Header */}
+      <div className="flex items-center justify-between px-6 py-4 border-b">
+        <h3 className="text-lg md:text-xl font-semibold text-gray-800">Add Expense</h3>
+        {/* show inner close only when NOT embedded */}
+        {!embedded && (
+          <button
+            onClick={() => {
+              setShowAddExpense(false);
+              if (parentOnClose) parentOnClose();
+            }}
+            aria-label="Close"
+            className="text-gray-500 hover:text-gray-800"
+          >
+            <X size={16} />
+          </button>
+        )}
+      </div>
 
-  // theme variables (fallbacks provided)
+      {/* Body */}
+      <form onSubmit={handleSave} className="px-6 py-5 overflow-y-auto" style={{ maxHeight: "64vh" }}>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="text-sm text-gray-700">Expense No.</label>
+            <div className="flex items-center gap-3 mt-1">
+              <input
+                name="expenseNo"
+                ref={firstInputRef}
+                value={form.expenseNo}
+                onChange={(e) => setForm((prev) => ({ ...prev, expenseNo: e.target.value }))}
+                className="w-full rounded-lg border border-gray-200 px-4 py-2"
+              />
+              <span className="text-sm font-medium" style={{ color: "#174552" }}>
+                Manual
+              </span>
+            </div>
+          </div>
+
+          <div>
+            <label className="text-sm text-gray-700">Date</label>
+            <div className="relative mt-1">
+              <input
+                type="date"
+                name="date"
+                value={form.date}
+                onChange={handleChange}
+                className="w-full rounded-lg border border-gray-200 px-4 py-2 pr-10"
+              />
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+                <Calendar size={16} />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Category */}
+        <div className="mt-4">
+          <label className="text-sm text-gray-700">Expense Category</label>
+          <select
+            name="category"
+            value={form.category}
+            onChange={handleChange}
+            className="mt-1 w-full rounded-lg border border-green-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-200"
+          >
+            <option value="">Select category</option>
+            {categories.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="mt-4">
+          <button type="button" onClick={addExpenseItem} className="inline-flex items-center gap-2 text-[#174552] font-medium">
+            <Plus size={16} /> Add Expense Item
+          </button>
+        </div>
+
+        {/* Items */}
+        <div className="space-y-3 mt-4">
+          {form.items.length === 0 ? (
+            <div className="text-sm text-gray-500">No items added yet.</div>
+          ) : (
+            form.items.map((it, idx) => (
+              <div key={idx} className="border rounded-lg p-3">
+                <div className="flex justify-between items-center mb-2">
+                  <div className="text-sm font-medium">Item {idx + 1}</div>
+                  <button type="button" onClick={() => removeExpenseItem(idx)} className="text-sm text-red-500">
+                    Remove
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-6 gap-2">
+                  <input
+                    placeholder="Description"
+                    className="col-span-3 rounded border border-gray-200 px-3 py-2"
+                    value={it.description || ""}
+                    onChange={(e) => handleItemChange(idx, "description", e.target.value)}
+                  />
+                  <input
+                    placeholder="Qty"
+                    className="col-span-1 rounded border border-gray-200 px-3 py-2"
+                    value={it.qty || ""}
+                    onChange={(e) => handleItemChange(idx, "qty", e.target.value)}
+                  />
+                  <input
+                    placeholder="Rate"
+                    className="col-span-1 rounded border border-gray-200 px-3 py-2"
+                    value={it.rate || ""}
+                    onChange={(e) => handleItemChange(idx, "rate", e.target.value)}
+                  />
+                  <input placeholder="Amount" className="col-span-1 rounded border border-gray-200 px-3 py-2" value={it.amount || ""} readOnly />
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        <div className="grid grid-cols-2 gap-4 border-t pt-4 mt-4">
+          <div>
+            <label className="text-sm text-gray-700">Total Amount</label>
+            <div className="mt-1 flex">
+              <span className="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-gray-200 bg-gray-50">Rs.</span>
+              <input name="totalAmount" value={form.totalAmount} onChange={handleChange} className="w-full rounded-r-lg border border-gray-200 px-4 py-2" />
+            </div>
+          </div>
+
+          <div>
+            <label className="text-sm text-gray-700">Payment Method</label>
+            <input name="paymentMethod" value="Cash" readOnly className="mt-1 w-full rounded-lg border border-gray-200 px-4 py-2 bg-gray-50 text-gray-700" />
+          </div>
+        </div>
+
+        <div className="mt-4">
+          <label className="text-sm text-gray-700">Remarks</label>
+          <textarea name="remarks" value={form.remarks} onChange={handleChange} placeholder="Enter remarks here..." className="mt-1 w-full rounded-lg border border-gray-200 px-4 py-3 min-h-[80px]" />
+        </div>
+
+        {/* attachments */}
+        <div className="flex items-center gap-4 mt-4">
+          <label className="w-20 h-20 rounded border border-dashed flex items-center justify-center cursor-pointer" title="Attach image">
+            <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+            <div className="flex flex-col items-center text-sm text-gray-500">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" className="mb-1">
+                <path d="M4 7h4l2-2h4l2 2h4v12H4V7z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+                <circle cx="12" cy="13" r="3" stroke="currentColor" strokeWidth="1.2" />
+              </svg>
+              Camera
+            </div>
+          </label>
+
+          <div className="flex gap-2 overflow-x-auto">
+            {form.attachments.map((f, i) => {
+              const url = URL.createObjectURL(f);
+              return (
+                <div key={i} className="relative w-20 h-20 rounded overflow-hidden border">
+                  <img src={url} alt={f.name} className="w-full h-full object-cover" />
+                  <button type="button" onClick={() => removeAttachment(i)} className="absolute -top-2 -right-2 bg-white rounded-full p-1 shadow">
+                    <X size={12} />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </form>
+
+      {/* Sticky footer */}
+      <div className="px-6 py-4 border-t bg-white flex items-center justify-end gap-3">
+        <button onClick={() => { recalcTotal(); }} className="px-4 py-2 rounded-md bg-white border text-gray-800 text-sm">
+          Recalculate
+        </button>
+        <button onClick={handleSave} className="px-5 py-2 rounded-md bg-emerald-500 text-white text-sm hover:brightness-95">
+          Save Expense
+        </button>
+      </div>
+    </div>
+  );
+
+  /* --- Rendering logic --- */
+
+  // When Dashboard embeds panel via ModalShell, render only Panel (no backdrop)
+  if (directOpen && embedded) {
+    return showAddExpense ? Panel : null;
+  }
+
+  // When opened directly (not embedded) show overlay + Panel
+  if (directOpen && !embedded) {
+    return (
+      <>
+        {showAddExpense && (
+          <div className="fixed inset-0 z-50 flex items-start justify-center p-6 bg-black/40 overflow-auto" style={{ left: sidebarOffset, width: `calc(100% - ${sidebarOffset})` }}>
+            <div className="mt-8">{Panel}</div>
+          </div>
+        )}
+      </>
+    );
+  }
+
+  // Normal page rendering (navigated from sidebar) - show empty state and open modal from page
+  // Provide a simple centered card with Add button
   const vars = {
-    primary: "var(--primary-500, #1E40AF)", // blue primary fallback
-    primaryHover: "var(--primary-600, #1E3A8A)",
-    bg: "var(--bg-default, #ffffff)",
-    surface: "var(--surface-200, #f3f4f6)", // page background
-    text: "var(--text-default, #0f172a)",
+    primary: "var(--primary-500, #1E40AF)",
     muted: "var(--muted, rgba(0,0,0,0.6))",
+    text: "var(--text-default, #0f172a)",
+    bg: "var(--bg-default, #ffffff)",
+    surface: "var(--surface-200, #f3f4f6)",
     border: "var(--border, rgba(0,0,0,0.06))",
   };
 
@@ -172,280 +409,16 @@ export function ExpensePage({ sidebarOpen = false }) {
           Click on the create expense button and start managing your expense
         </p>
 
-        <button
-          onClick={() => setShowAddExpense(true)}
-          className="mt-4"
-          style={primaryBtnStyle}
-          aria-label="Add New Expense"
-        >
+        <button onClick={() => setShowAddExpense(true)} className="mt-4" style={primaryBtnStyle} aria-label="Add New Expense">
           <Plus size={18} />
           Add New Expense
         </button>
       </div>
 
-      {/* Add Expense Modal */}
+      {/* overlay when opened from this page */}
       {showAddExpense && (
-        <div
-          className="fixed inset-0 z-50 flex items-start justify-center"
-          style={{ left: sidebarOffset, width: `calc(100% - ${sidebarOffset})` }}
-        >
-          {/* backdrop */}
-          <div
-            className="absolute inset-0"
-            onClick={() => setShowAddExpense(false)}
-            style={{ background: "rgba(2,6,23,0.45)" }}
-          />
-
-          <div
-            className="relative z-10 mt-12 w-full max-w-3xl"
-            style={{
-              background: vars.bg,
-              borderRadius: 12,
-              boxShadow: "0 10px 40px rgba(2,6,23,0.2)",
-              overflow: "hidden",
-            }}
-          >
-            {/* header */}
-            <div
-              className="flex items-center justify-between px-6 py-4"
-              style={{ borderBottom: `1px solid ${vars.border}`, background: vars.bg }}
-            >
-              <h3 className="text-lg font-semibold" style={{ color: vars.text }}>
-                Add Expense
-              </h3>
-              <button
-                className="p-2 rounded hover:bg-gray-100"
-                onClick={() => setShowAddExpense(false)}
-                aria-label="Close"
-                style={{ color: vars.muted }}
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            {/* body - scrollable */}
-            <form
-              onSubmit={handleSave}
-              className="max-h-[70vh] overflow-y-auto px-6 py-4 space-y-4"
-              style={{ background: vars.bg }}
-            >
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm" style={{ color: vars.muted }}>
-                    Expense No.
-                  </label>
-                  <div className="flex items-center gap-3 mt-1">
-                    <input
-                      name="expenseNo"
-                      value={form.expenseNo}
-                      onChange={(e) => setForm((prev) => ({ ...prev, expenseNo: e.target.value }))}
-                      className="w-full rounded-lg border px-4 py-2"
-                      style={{ borderColor: vars.border, background: "transparent", color: vars.text }}
-                    />
-                    <span className="text-sm font-medium" style={{ color: vars.primary }}>
-                      Manual
-                    </span>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-sm" style={{ color: vars.muted }}>
-                    Date
-                  </label>
-                  <div className="relative mt-1">
-                    <input
-                      type="date"
-                      name="date"
-                      value={form.date}
-                      onChange={handleChange}
-                      className="w-full rounded-lg px-4 py-2 pr-10"
-                      style={{ border: `1px solid ${vars.border}`, background: "transparent", color: vars.text }}
-                    />
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: vars.muted }}>
-                      <Calendar size={16} />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Category */}
-              <div>
-                <label className="text-sm" style={{ color: vars.muted }}>
-                  Expense Category
-                </label>
-                <select
-                  name="category"
-                  value={form.category}
-                  onChange={handleChange}
-                  className="mt-1 w-full rounded-lg px-4 py-3"
-                  style={{
-                    border: `1px solid ${vars.border}`,
-                    background: "transparent",
-                    color: vars.text,
-                    outline: "none",
-                  }}
-                >
-                  <option value="">Select category</option>
-                  {categories.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <button
-                  type="button"
-                  onClick={addExpenseItem}
-                  className="inline-flex items-center gap-2"
-                  style={{ color: vars.primary, fontWeight: 600 }}
-                >
-                  <Plus size={14} /> Add Expense Item
-                </button>
-              </div>
-
-              {/* Items */}
-              <div className="space-y-3">
-                {form.items.length === 0 && <div className="text-sm" style={{ color: vars.muted }}>No items added yet.</div>}
-                {form.items.map((it, idx) => (
-                  <div key={idx} className="border rounded-lg p-3" style={{ borderColor: vars.border }}>
-                    <div className="flex justify-between items-center mb-2">
-                      <div className="text-sm font-medium" style={{ color: vars.text }}>
-                        Item {idx + 1}
-                      </div>
-                      <button type="button" onClick={() => removeExpenseItem(idx)} className="text-sm" style={{ color: "#dc2626" }}>
-                        Remove
-                      </button>
-                    </div>
-
-                    <div className="grid grid-cols-6 gap-2">
-                      <input
-                        placeholder="Description"
-                        className="col-span-3 rounded px-3 py-2"
-                        value={it.description || ""}
-                        onChange={(e) => handleItemChange(idx, "description", e.target.value)}
-                        style={{ border: `1px solid ${vars.border}`, background: "transparent", color: vars.text }}
-                      />
-                      <input
-                        placeholder="Qty"
-                        className="col-span-1 rounded px-3 py-2"
-                        value={it.qty || ""}
-                        onChange={(e) => handleItemChange(idx, "qty", e.target.value)}
-                        style={{ border: `1px solid ${vars.border}`, background: "transparent", color: vars.text }}
-                      />
-                      <input
-                        placeholder="Rate"
-                        className="col-span-1 rounded px-3 py-2"
-                        value={it.rate || ""}
-                        onChange={(e) => handleItemChange(idx, "rate", e.target.value)}
-                        style={{ border: `1px solid ${vars.border}`, background: "transparent", color: vars.text }}
-                      />
-                      <input
-                        placeholder="Amount"
-                        className="col-span-1 rounded px-3 py-2"
-                        value={it.amount || ""}
-                        readOnly
-                        style={{ border: `1px solid ${vars.border}`, background: "transparent", color: vars.text }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 border-t pt-4">
-                <div>
-                  <label className="text-sm" style={{ color: vars.muted }}>
-                    Total Amount
-                  </label>
-                  <div className="mt-1 flex">
-                    <span className="inline-flex items-center px-3 rounded-l-lg border border-r-0" style={{ borderColor: vars.border, background: "var(--surface-100, #f8fafc)" }}>
-                      Rs.
-                    </span>
-                    <input
-                      name="totalAmount"
-                      value={form.totalAmount}
-                      onChange={handleChange}
-                      className="w-full rounded-r-lg px-4 py-2"
-                      style={{ border: `1px solid ${vars.border}`, background: "transparent", color: vars.text }}
-                      placeholder=""
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-sm" style={{ color: vars.muted }}>
-                    Payment Method
-                  </label>
-                  <input
-                    name="paymentMethod"
-                    value="Cash"
-                    readOnly
-                    className="mt-1 w-full rounded-lg px-4 py-2"
-                    style={{ border: `1px solid ${vars.border}`, background: "var(--surface-100, #f8fafc)", color: vars.text }}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-sm" style={{ color: vars.muted }}>
-                  Remarks
-                </label>
-                <textarea
-                  name="remarks"
-                  value={form.remarks}
-                  onChange={handleChange}
-                  placeholder="Enter remarks here..."
-                  className="mt-1 w-full rounded-lg px-4 py-3 min-h-[80px]"
-                  style={{ border: `1px solid ${vars.border}`, background: "transparent", color: vars.text }}
-                />
-              </div>
-
-              {/* attachments */}
-              <div className="flex items-center gap-4">
-                <label
-                  className="w-20 h-20 rounded border border-dashed flex items-center justify-center cursor-pointer"
-                  title="Attach image"
-                  style={{ borderColor: vars.border }}
-                >
-                  <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
-                  <div className="flex flex-col items-center text-sm" style={{ color: vars.muted }}>
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" className="mb-1">
-                      <path d="M4 7h4l2-2h4l2 2h4v12H4V7z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-                      <circle cx="12" cy="13" r="3" stroke="currentColor" strokeWidth="1.2" />
-                    </svg>
-                    Camera
-                  </div>
-                </label>
-
-                <div className="flex gap-2 overflow-x-auto">
-                  {form.attachments.map((f, i) => {
-                    const url = URL.createObjectURL(f);
-                    return (
-                      <div key={i} className="relative w-20 h-20 rounded overflow-hidden border" style={{ borderColor: vars.border }}>
-                        <img src={url} alt={f.name} className="w-full h-full object-cover" />
-                        <button
-                          type="button"
-                          onClick={() => removeAttachment(i)}
-                          className="absolute -top-2 -right-2 bg-white rounded-full p-1 shadow"
-                          style={{ border: `1px solid ${vars.border}` }}
-                        >
-                          <X size={12} />
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </form>
-
-            {/* footer actions */}
-            <div className="flex items-center justify-end gap-3 p-4" style={{ borderTop: `1px solid ${vars.border}`, background: vars.bg }}>
-              <button onClick={handleSave} className="px-5 py-2 rounded-lg" style={{ background: vars.primary, color: "#fff" }}>
-                Save Expense
-              </button>
-            </div>
-          </div>
+        <div className="fixed inset-0 z-50 flex items-start justify-center p-6 bg-black/40 overflow-auto" style={{ left: sidebarOffset, width: `calc(100% - ${sidebarOffset})` }}>
+          <div className="mt-8">{Panel}</div>
         </div>
       )}
     </div>
