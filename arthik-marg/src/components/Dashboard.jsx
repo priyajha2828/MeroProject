@@ -1,4 +1,5 @@
-import { useState } from "react";
+// src/components/Dashboard.jsx
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Card from "./Card";
 import AddReminder from "./AddReminder";
@@ -45,10 +46,13 @@ export default function Dashboard() {
     setReminders([...reminders, newReminder]);
   };
 
-  const buttonBaseClass = "px-4 py-2 rounded-xl text-white hover:opacity-90";
+  const buttonBaseClass = "px-4 py-2 rounded-xl text-white hover:opacity-90 transition-colors";
 
   return (
-    <div className="p-4">
+    <div
+      className="p-4 min-h-screen transition-theme"
+      style={{ background: "var(--bg-default)", color: "var(--text-default)" }}
+    >
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-3xl font-bold">Welcome Rejina Agrawal</h2>
@@ -56,21 +60,24 @@ export default function Dashboard() {
         <div className="flex gap-3 relative">
           <button
             onClick={() => navigate("/quick-pos")}
-            className={`${buttonBaseClass} bg-[#072255]`}
+            className={buttonBaseClass}
+            style={{ background: "var(--primary-500)" }}
           >
             Quick POS
           </button>
 
           <button
             onClick={() => navigate("/add-sales")}
-            className={`${buttonBaseClass} bg-[#072255]`}
+            className={buttonBaseClass}
+            style={{ background: "var(--primary-500)" }}
           >
             + Add Sales
           </button>
 
           <button
             onClick={() => navigate("/add-purchase")}
-            className={`${buttonBaseClass} bg-[#072255]`}
+            className={buttonBaseClass}
+            style={{ background: "var(--primary-500)" }}
           >
             + Add Purchase
           </button>
@@ -79,58 +86,73 @@ export default function Dashboard() {
           <div className="relative">
             <button
               onClick={() => setShowAddMore(!showAddMore)}
-              className={`${buttonBaseClass} bg-[#072255] flex items-center gap-1`}
+              className={`${buttonBaseClass} flex items-center gap-1`}
+              style={{ background: "var(--primary-500)" }}
             >
               + Add More ▼
             </button>
 
             {showAddMore && (
-              <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-xl shadow-lg z-50">
+              <div
+                className="absolute right-0 mt-2 w-48 rounded-xl shadow-lg z-50 border"
+                style={{
+                  background: "var(--surface-100)",
+                  borderColor: "var(--text-default)",
+                }}
+                role="menu"
+              >
                 <button
                   onClick={() => navigate("/payment-in")}
-                  className="flex items-center gap-2 w-full px-4 py-2 hover:bg-gray-100 rounded-t-xl"
+                  className="flex items-center gap-2 w-full px-4 py-2 hover:opacity-90"
+                  style={{ color: "var(--text-default)" }}
                 >
                   <DollarSign size={16} /> Payment In
                 </button>
 
                 <button
                   onClick={() => navigate("/payment-out")}
-                  className="flex items-center gap-2 w-full px-4 py-2 hover:bg-gray-100"
+                  className="flex items-center gap-2 w-full px-4 py-2 hover:opacity-90"
+                  style={{ color: "var(--text-default)" }}
                 >
                   <CreditCard size={16} /> Payment Out
                 </button>
 
                 <button
                   onClick={() => navigate("/quotation")}
-                  className="flex items-center gap-2 w-full px-4 py-2 hover:bg-gray-100"
+                  className="flex items-center gap-2 w-full px-4 py-2 hover:opacity-90"
+                  style={{ color: "var(--text-default)" }}
                 >
                   <ShoppingCart size={16} /> Quotation
                 </button>
 
                 <button
                   onClick={() => navigate("/sales-return")}
-                  className="flex items-center gap-2 w-full px-4 py-2 hover:bg-gray-100"
+                  className="flex items-center gap-2 w-full px-4 py-2 hover:opacity-90"
+                  style={{ color: "var(--text-default)" }}
                 >
                   <Package size={16} /> Sales Return
                 </button>
 
                 <button
                   onClick={() => navigate("/purchase-return")}
-                  className="flex items-center gap-2 w-full px-4 py-2 hover:bg-gray-100"
+                  className="flex items-center gap-2 w-full px-4 py-2 hover:opacity-90"
+                  style={{ color: "var(--text-default)" }}
                 >
                   <Package size={16} /> Purchase Return
                 </button>
 
                 <button
                   onClick={() => navigate("/expense-insights")}
-                  className="flex items-center gap-2 w-full px-4 py-2 hover:bg-gray-100"
+                  className="flex items-center gap-2 w-full px-4 py-2 hover:opacity-90"
+                  style={{ color: "var(--text-default)" }}
                 >
                   <BarChart2 size={16} /> Expense
                 </button>
 
                 <button
                   onClick={() => navigate("/income")}
-                  className="flex items-center gap-2 w-full px-4 py-2 hover:bg-gray-100 rounded-b-xl"
+                  className="flex items-center gap-2 w-full px-4 py-2 hover:opacity-90 rounded-b-xl"
+                  style={{ color: "var(--text-default)" }}
                 >
                   <DollarSign size={16} /> Income
                 </button>
@@ -141,18 +163,21 @@ export default function Dashboard() {
       </div>
 
       {/* Cashflow */}
-      <div className="bg-white p-4 rounded-xl shadow mb-6">
+      <div
+        className="p-4 rounded-xl mb-6 shadow"
+        style={{ background: "var(--surface-100)", borderColor: "var(--text-default)" }}
+      >
         <h3 className="font-semibold mb-4">Cashflow (Last 7 Days)</h3>
 
         <div className="h-56">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={cashflowData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis dataKey="day" stroke="#6b7280" />
-              <YAxis stroke="#6b7280" />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--surface-200)" />
+              <XAxis dataKey="day" stroke="var(--muted)" />
+              <YAxis stroke="var(--muted)" />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: "#f3f4f6",
+                  backgroundColor: "var(--surface-200)",
                   borderRadius: 8,
                 }}
               />
@@ -168,7 +193,6 @@ export default function Dashboard() {
         <Card
           title="To Receive"
           amount="Rs. 0"
-          color="bg-emerald-50"
           icon={<DollarSign size={20} />}
           onClick={() => navigate("/to-receive")}
         />
@@ -176,7 +200,6 @@ export default function Dashboard() {
         <Card
           title="To Give"
           amount="Rs. 0"
-          color="bg-pink-50"
           icon={<CreditCard size={20} />}
           onClick={() => navigate("/to-give")}
         />
@@ -184,7 +207,6 @@ export default function Dashboard() {
         <Card
           title="Sales"
           amount="Rs. 0"
-          color="bg-emerald-50"
           icon={<ShoppingCart size={20} />}
           onClick={() => navigate("/sale-insights")}
         />
@@ -192,7 +214,6 @@ export default function Dashboard() {
         <Card
           title="Purchase"
           amount="Rs. 0"
-          color="bg-sky-50"
           icon={<Package size={20} />}
           onClick={() => navigate("/purchase-insights")}
         />
@@ -200,7 +221,6 @@ export default function Dashboard() {
         <Card
           title="Expense"
           amount="Rs. 0"
-          color="bg-indigo-50"
           icon={<BarChart2 size={20} />}
           onClick={() => navigate("/expense-insights")}
         />
@@ -209,13 +229,16 @@ export default function Dashboard() {
       {/* Panels */}
       <div className="grid grid-cols-3 gap-4 mb-8">
         {/* Reminders */}
-        <div className="bg-white p-4 rounded-xl shadow min-h-40">
-          <div className="text-sm text-gray-500">
+        <div
+          className="p-4 rounded-xl min-h-40"
+          style={{ background: "var(--surface-100)", borderColor: "var(--text-default)" }}
+        >
+          <div className="text-sm" style={{ color: "var(--muted)" }}>
             Upcoming Reminders ({reminders.length})
           </div>
 
           {reminders.length === 0 ? (
-            <div className="mt-2 text-gray-600">
+            <div className="mt-2" style={{ color: "var(--muted)" }}>
               Looks like you haven't created any reminders yet.
             </div>
           ) : (
@@ -230,30 +253,42 @@ export default function Dashboard() {
 
           <button
             onClick={() => setShowReminder(true)}
-            className={`${buttonBaseClass} bg-[#072255] mt-3`}
+            className={`${buttonBaseClass} mt-3`}
+            style={{ background: "var(--primary-500)" }}
           >
             Add New Reminder
           </button>
         </div>
 
         {/* Balance */}
-        <div className="bg-white p-4 rounded-xl shadow min-h-40 flex flex-col justify-between">
+        <div
+          className="p-4 rounded-xl min-h-40 flex flex-col justify-between"
+          style={{ background: "var(--surface-100)", borderColor: "var(--text-default)" }}
+        >
           <div>
-            <div className="text-sm text-gray-500">Total Balance (Cash & Bank)</div>
+            <div className="text-sm" style={{ color: "var(--muted)" }}>
+              Total Balance (Cash & Bank)
+            </div>
             <div className="text-2xl font-semibold mt-2">Rs. 0</div>
           </div>
         </div>
 
         {/* Profile */}
-        <div className="bg-white p-4 rounded-xl shadow min-h-40 flex flex-col justify-between">
+        <div
+          className="p-4 rounded-xl min-h-40 flex flex-col justify-between"
+          style={{ background: "var(--surface-100)", borderColor: "var(--text-default)" }}
+        >
           <div>
-            <div className="text-sm text-gray-500">Complete your Profile</div>
+            <div className="text-sm" style={{ color: "var(--muted)" }}>
+              Complete your Profile
+            </div>
             <div className="font-semibold text-lg">{profileData ? "100%" : "30%"}</div>
           </div>
 
           <button
             onClick={() => setShowProfile(true)}
-            className={`${buttonBaseClass} bg-[#072255] mt-4`}
+            className={`${buttonBaseClass} mt-4`}
+            style={{ background: "var(--primary-500)" }}
           >
             Complete Profile
           </button>

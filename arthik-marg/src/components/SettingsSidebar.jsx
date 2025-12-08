@@ -15,9 +15,6 @@ import {
 } from "lucide-react";
 import { useLocale } from "./LocaleProvider";
 
-const CUSTOM_BLUE = "bg-[#172554]";
-const CUSTOM_BLUE_HOVER_BG = "hover:bg-[#111A31]";
-
 export default function SettingsSidebar({ collapsed: collapsedProp = false }) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -29,7 +26,6 @@ export default function SettingsSidebar({ collapsed: collapsedProp = false }) {
   const pathname = location.pathname.replace(/^\/+/, "");
   const active = pathname.split("/").filter(Boolean).pop() || "general";
 
-  // ❌ Removed settings_nav keys → using plain text
   const items = [
     { id: "general", label: "General", icon: <Settings size={18} /> },
     { id: "account", label: "Account", icon: <User size={18} /> },
@@ -37,7 +33,6 @@ export default function SettingsSidebar({ collapsed: collapsedProp = false }) {
     { id: "subscription", label: "Subscription", icon: <Package size={18} /> },
   ];
 
-  // Feature group
   const featureGroup = {
     id: "feature-settings",
     label: "Feature Settings",
@@ -69,7 +64,8 @@ export default function SettingsSidebar({ collapsed: collapsedProp = false }) {
   return (
     <aside
       aria-label="Settings navigation"
-      className={`relative flex-shrink-0 border-r border-gray-200 bg-white transition-all duration-200 ease-in-out ${
+      style={{ borderColor: "var(--text-default)" }}
+      className={`relative flex-shrink-0 border-r bg-sidebar text-text transition-all duration-200 ease-in-out ${
         collapsed ? "w-20" : "w-72"
       } p-4`}
     >
@@ -81,7 +77,7 @@ export default function SettingsSidebar({ collapsed: collapsedProp = false }) {
           aria-label={collapsed ? "Open sidebar" : "Collapse sidebar"}
           title={collapsed ? "Open" : "Collapse"}
           className={`flex items-center justify-center w-9 h-9 rounded-full transition-colors duration-150 ${
-            collapsed ? "bg-gray-100 hover:bg-gray-200" : "bg-white hover:bg-gray-100"
+            collapsed ? "bg-surface hover:bg-surface/90" : "bg-sidebar hover:bg-surface"
           }`}
         >
           {collapsed ? <ChevronRight size={16} /> : <Menu size={16} />}
@@ -94,12 +90,12 @@ export default function SettingsSidebar({ collapsed: collapsedProp = false }) {
           type="button"
           onClick={handleBack}
           title="Back"
-          className={`p-1 rounded hover:bg-gray-200 transition ${collapsed ? "" : "mr-1"}`}
+          className={`p-1 rounded hover:bg-surface transition ${collapsed ? "" : "mr-1"}`}
         >
-          <ArrowLeft size={22} className="text-gray-700" />
+          <ArrowLeft size={22} className="text-text" />
         </button>
 
-        {!collapsed && <h2 className="text-xl font-semibold text-gray-800">Settings</h2>}
+        {!collapsed && <h2 className="text-xl font-semibold text-text">Settings</h2>}
       </div>
 
       {/* Navigation List */}
@@ -114,7 +110,7 @@ export default function SettingsSidebar({ collapsed: collapsedProp = false }) {
               title={it.label}
               aria-current={isActive ? "page" : undefined}
               className={`flex items-center gap-4 w-full text-left p-3 rounded transition-colors duration-150 ${
-                isActive ? `${CUSTOM_BLUE} text-white` : `text-gray-700 ${CUSTOM_BLUE_HOVER_BG} hover:text-white`
+                isActive ? `bg-surface text-primary` : `text-text hover:bg-surface`
               }`}
             >
               <div className="flex-shrink-0">{it.icon}</div>
@@ -131,7 +127,7 @@ export default function SettingsSidebar({ collapsed: collapsedProp = false }) {
             title={featureGroup.label}
             aria-expanded={featureOpen}
             className={`flex items-center justify-between w-full text-left p-3 rounded transition-colors duration-150 ${
-              isFeatureActive ? `${CUSTOM_BLUE} text-white` : `text-gray-700 ${CUSTOM_BLUE_HOVER_BG} hover:text-white`
+              isFeatureActive ? `bg-surface text-primary` : `text-text hover:bg-surface`
             }`}
           >
             <div className="flex items-center gap-4">
@@ -159,7 +155,7 @@ export default function SettingsSidebar({ collapsed: collapsedProp = false }) {
                     onClick={() => navigate(`/settings/${c.id}`)}
                     title={c.label}
                     className={`flex items-center gap-3 w-full text-left p-2 rounded text-sm transition-colors duration-150 ${
-                      isChildActive ? `${CUSTOM_BLUE} text-white` : `text-gray-700 ${CUSTOM_BLUE_HOVER_BG} hover:text-white`
+                      isChildActive ? `bg-surface text-primary` : `text-text hover:bg-surface`
                     }`}
                   >
                     {c.icon}

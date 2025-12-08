@@ -1,6 +1,18 @@
-import { useState } from "react";
+// src/components/QuickPOS.jsx
+import React, { useState, useContext } from "react";
+import { ThemeContext } from "../context/ThemeContext";
+
+/**
+ * QuickPOS (theme-aware)
+ * - uses CSS variables supplied by your ThemeProvider:
+ *   --bg-default, --surface-200, --surface-100, --primary-500, --muted, --text-default
+ * - falls back to sensible values when variables are not present
+ * - keeps original behavior, only injects theme-driven colors/styles
+ */
 
 export default function QuickPOS() {
+  const { theme } = useContext(ThemeContext || {}); // safe fallback
+
   const [showForm, setShowForm] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
@@ -44,252 +56,353 @@ export default function QuickPOS() {
       ? items
       : items.filter((item) => item.category === "General");
 
+  /* Theme-aware inline styles using CSS variables with fallbacks */
+  const pageStyle = {
+    background: "var(--surface-200, #f3f4f6)", // page light-grey surface
+    color: "var(--text-default, #0f172a)",
+    minHeight: "100vh",
+    padding: "2rem",
+  };
+
+  const containerStyle = {
+    maxWidth: "1100px",
+    margin: "0 auto",
+  };
+
+  const panelStyle = {
+    background: "var(--bg-default, #ffffff)",
+    border: "1px solid rgba(0,0,0,0.06)",
+    borderRadius: 8,
+    padding: 20,
+  };
+
+  const inputStyle = {
+    background: "var(--surface-100, #ffffff)",
+    color: "var(--text-default, #0f172a)",
+    border: "1px solid rgba(0,0,0,0.08)",
+  };
+
+  const primaryBtn = {
+    background: "var(--primary-500, #16a34a)", // green-ish default for Save
+    color: "var(--text-on-primary, #ffffff)",
+  };
+
+  const addBtn = {
+    background: "var(--primary-500, #059669)",
+    color: "var(--text-on-primary, #ffffff)",
+  };
+
+  const ghostBtn = {
+    background: "transparent",
+    color: "var(--text-default, #0f172a)",
+    border: "1px solid rgba(0,0,0,0.06)",
+  };
+
+  const categoryActiveStyle = {
+    background: "var(--primary-500, #059669)",
+    color: "var(--text-on-primary, #fff)",
+  };
+
+  const categoryInactiveStyle = {
+    background: "var(--surface-100, #ffffff)",
+    color: "var(--muted, rgba(0,0,0,0.6))",
+    border: "1px solid rgba(0,0,0,0.06)",
+  };
+
   return (
-    <div className="w-full max-w-6xl mx-auto p-8">
+    <div style={pageStyle}>
+      <div style={containerStyle}>
+        <div style={panelStyle}>
+          <h2 style={{ fontSize: 28, fontWeight: 700, marginBottom: 20 }}>Quick POS</h2>
 
-      <h2 className="text-4xl font-bold mb-8 text-gray-900 dark:text-gray-100">
-        Quick POS
-      </h2>
+          {!showForm && (
+            <>
+              {/* Search + Add New */}
+              <div style={{ display: "flex", gap: 12, marginBottom: 24 }}>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search Items..."
+                  style={{
+                    flex: 1,
+                    padding: "14px 18px",
+                    borderRadius: 10,
+                    ...inputStyle,
+                    fontSize: 16,
+                  }}
+                />
+                <button
+                  onClick={() => setShowForm(true)}
+                  style={{
+                    padding: "12px 20px",
+                    borderRadius: 10,
+                    cursor: "pointer",
+                    ...addBtn,
+                    fontWeight: 600,
+                    border: "none",
+                  }}
+                >
+                  Add New Item
+                </button>
+              </div>
 
-      {!showForm && (
-        <>
-          {/* Search + Add New */}
-          <div className="flex gap-4 mb-8">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search Items..."
-              className="flex-1 px-5 py-4 rounded-lg border dark:bg-gray-700 dark:text-gray-100"
-            />
-            <button
-              onClick={() => setShowForm(true)}
-              className="px-8 py-4 bg-green-500 text-white rounded hover:bg-green-600"
-            >
-              Add New Item
-            </button>
-          </div>
+              {/* Category Buttons */}
+              <div style={{ display: "flex", gap: 12, marginBottom: 20 }}>
+                <button
+                  onClick={() => setActiveCategory("all")}
+                  style={{
+                    padding: "10px 20px",
+                    borderRadius: 10,
+                    cursor: "pointer",
+                    ...(activeCategory === "all" ? categoryActiveStyle : categoryInactiveStyle),
+                    fontWeight: 600,
+                  }}
+                >
+                  All Categories
+                </button>
 
-          {/* Category Buttons */}
-          <div className="flex gap-4 mb-6">
-            <button
-              onClick={() => setActiveCategory("all")}
-              className={`px-8 py-3 rounded ${
-                activeCategory === "all"
-                  ? "bg-gray-700 text-white"
-                  : "bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-100"
-              }`}
-            >
-              All Categories
-            </button>
+                <button
+                  onClick={() => setActiveCategory("general")}
+                  style={{
+                    padding: "10px 20px",
+                    borderRadius: 10,
+                    cursor: "pointer",
+                    ...(activeCategory === "general" ? categoryActiveStyle : categoryInactiveStyle),
+                    fontWeight: 600,
+                  }}
+                >
+                  General
+                </button>
+              </div>
 
-            <button
-              onClick={() => setActiveCategory("general")}
-              className={`px-8 py-3 rounded ${
-                activeCategory === "general"
-                  ? "bg-blue-500 text-white"
-                  : "bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-100"
-              }`}
-            >
-              General
-            </button>
-          </div>
+              {/* Item List */}
+              <div
+                style={{
+                  maxHeight: 450,
+                  overflowY: "auto",
+                  borderTop: "1px solid rgba(0,0,0,0.06)",
+                  paddingTop: 16,
+                }}
+              >
+                {filteredItems.length === 0 ? (
+                  <p style={{ color: "var(--muted, rgba(0,0,0,0.6))" }}>No items found.</p>
+                ) : (
+                  filteredItems
+                    .filter((item) =>
+                      item.name.toLowerCase().includes(searchQuery.toLowerCase())
+                    )
+                    .map((item, index) => (
+                      <div
+                        key={index}
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          padding: "12px",
+                          borderRadius: 8,
+                          border: "1px solid rgba(0,0,0,0.06)",
+                          marginBottom: 12,
+                          background: "var(--bg-default, #ffffff)",
+                        }}
+                      >
+                        <span style={{ fontWeight: 600, fontSize: 16 }}>{item.name}</span>
+                        <span style={{ color: "var(--muted, rgba(0,0,0,0.6))" }}>{item.category}</span>
+                      </div>
+                    ))
+                )}
+              </div>
+            </>
+          )}
 
-          {/* Item List */}
-          <div className="space-y-3 max-h-[450px] overflow-y-auto border-t pt-4">
-            {filteredItems.length === 0 ? (
-              <p className="text-gray-500 dark:text-gray-300">
-                No items found.
-              </p>
-            ) : (
-              filteredItems
-                .filter((item) =>
-                  item.name.toLowerCase().includes(searchQuery.toLowerCase())
-                )
-                .map((item, index) => (
-                  <div
-                    key={index}
-                    className="p-4 rounded border dark:border-gray-700 flex justify-between"
+          {/* Add New Item Form */}
+          {showForm && (
+            <div style={{ marginTop: 12 }}>
+              {/* Header */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
+                <h3 style={{ fontSize: 22, fontWeight: 700 }}>Add New Item</h3>
+                <button
+                  onClick={() => setShowForm(false)}
+                  style={{
+                    padding: "10px 14px",
+                    borderRadius: 8,
+                    cursor: "pointer",
+                    ...ghostBtn,
+                  }}
+                >
+                  Back
+                </button>
+              </div>
+
+              {/* Fields */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+                <div>
+                  <label style={{ display: "block", fontWeight: 600, marginBottom: 6 }}>Item Name</label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={itemData.name}
+                    onChange={handleChange}
+                    style={{ width: "100%", padding: 14, borderRadius: 8, ...inputStyle }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: "block", fontWeight: 600, marginBottom: 6 }}>Item Category</label>
+                  <input
+                    type="text"
+                    name="category"
+                    value={itemData.category}
+                    onChange={handleChange}
+                    style={{ width: "100%", padding: 14, borderRadius: 8, ...inputStyle }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+                <div>
+                  <label style={{ display: "block", fontWeight: 600, marginBottom: 6 }}>Item Type</label>
+                  <select
+                    name="type"
+                    value={itemData.type}
+                    onChange={handleChange}
+                    style={{ width: "100%", padding: 14, borderRadius: 8, ...inputStyle }}
                   >
-                    <span className="font-semibold text-lg">{item.name}</span>
-                    <span className="text-gray-500 dark:text-gray-300">
-                      {item.category}
-                    </span>
-                  </div>
-                ))
-            )}
-          </div>
-        </>
-      )}
+                    <option>Product</option>
+                    <option>Service</option>
+                  </select>
+                </div>
 
-      {/* Add New Item Form */}
-      {showForm && (
-        <div className="mt-6 space-y-6 text-lg">
+                <div>
+                  <label style={{ display: "block", fontWeight: 600, marginBottom: 6 }}>Sales Price</label>
+                  <input
+                    type="number"
+                    name="salesPrice"
+                    value={itemData.salesPrice}
+                    onChange={handleChange}
+                    style={{ width: "100%", padding: 14, borderRadius: 8, ...inputStyle }}
+                  />
+                </div>
+              </div>
 
-          {/* Header */}
-          <div className="flex justify-between">
-            <h3 className="text-3xl font-bold">Add New Item</h3>
-            <button
-              onClick={() => setShowForm(false)}
-              className="px-6 py-3 bg-gray-300 dark:bg-gray-600 rounded hover:bg-gray-400"
-            >
-              Back
-            </button>
-          </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+                <div>
+                  <label style={{ display: "block", fontWeight: 600, marginBottom: 6 }}>Purchase Price</label>
+                  <input
+                    type="number"
+                    name="purchasePrice"
+                    value={itemData.purchasePrice}
+                    onChange={handleChange}
+                    style={{ width: "100%", padding: 14, borderRadius: 8, ...inputStyle }}
+                  />
+                </div>
 
-          {/* Fields */}
-          <div className="grid grid-cols-2 gap-8">
-            <div>
-              <label className="font-semibold">Item Name</label>
-              <input
-                type="text"
-                name="name"
-                value={itemData.name}
-                onChange={handleChange}
-                className="w-full px-5 py-4 rounded border dark:bg-gray-700 dark:text-gray-100"
-              />
+                <div>
+                  <label style={{ display: "block", fontWeight: 600, marginBottom: 6 }}>Opening Stock</label>
+                  <input
+                    type="number"
+                    name="openingStock"
+                    value={itemData.openingStock}
+                    onChange={handleChange}
+                    style={{ width: "100%", padding: 14, borderRadius: 8, ...inputStyle }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+                <div>
+                  <label style={{ display: "block", fontWeight: 600, marginBottom: 6 }}>Primary Unit</label>
+                  <input
+                    type="text"
+                    name="primaryUnit"
+                    value={itemData.primaryUnit}
+                    onChange={handleChange}
+                    style={{ width: "100%", padding: 14, borderRadius: 8, ...inputStyle }}
+                  />
+                </div>
+
+                <div style={{ display: "flex", alignItems: "flex-end" }}>
+                  <button
+                    type="button"
+                    onClick={() => alert("Add Secondary Unit Logic")}
+                    style={{
+                      padding: "12px 18px",
+                      borderRadius: 8,
+                      cursor: "pointer",
+                      ...primaryBtn,
+                      border: "none",
+                    }}
+                  >
+                    Add Secondary Unit
+                  </button>
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 16 }}>
+                <div>
+                  <label style={{ display: "block", fontWeight: 600, marginBottom: 6 }}>Item Code</label>
+                  <input
+                    type="text"
+                    name="itemCode"
+                    value={itemData.itemCode}
+                    onChange={handleChange}
+                    style={{ width: "100%", padding: 14, borderRadius: 8, ...inputStyle }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: "block", fontWeight: 600, marginBottom: 6 }}>HS Code</label>
+                  <input
+                    type="text"
+                    name="hsCode"
+                    value={itemData.hsCode}
+                    onChange={handleChange}
+                    style={{ width: "100%", padding: 14, borderRadius: 8, ...inputStyle }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: "block", fontWeight: 600, marginBottom: 6 }}>Description</label>
+                  <textarea
+                    name="description"
+                    value={itemData.description}
+                    onChange={handleChange}
+                    style={{ width: "100%", padding: 14, borderRadius: 8, ...inputStyle, minHeight: 86 }}
+                  />
+                </div>
+              </div>
+
+              {/* Save + Cancel */}
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
+                <button
+                  onClick={() => setShowForm(false)}
+                  style={{
+                    padding: "12px 18px",
+                    borderRadius: 8,
+                    cursor: "pointer",
+                    ...ghostBtn,
+                  }}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  onClick={handleSave}
+                  style={{
+                    padding: "12px 18px",
+                    borderRadius: 8,
+                    cursor: "pointer",
+                    ...primaryBtn,
+                    border: "none",
+                  }}
+                >
+                  Save
+                </button>
+              </div>
             </div>
-
-            <div>
-              <label className="font-semibold">Item Category</label>
-              <input
-                type="text"
-                name="category"
-                value={itemData.category}
-                onChange={handleChange}
-                className="w-full px-5 py-4 rounded border dark:bg-gray-700 dark:text-gray-100"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-8">
-            <div>
-              <label className="font-semibold">Item Type</label>
-              <select
-                name="type"
-                value={itemData.type}
-                onChange={handleChange}
-                className="w-full px-5 py-4 rounded border dark:bg-gray-700 dark:text-gray-100"
-              >
-                <option>Product</option>
-                <option>Service</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="font-semibold">Sales Price</label>
-              <input
-                type="number"
-                name="salesPrice"
-                value={itemData.salesPrice}
-                onChange={handleChange}
-                className="w-full px-5 py-4 rounded border dark:bg-gray-700 dark:text-gray-100"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-8">
-            <div>
-              <label className="font-semibold">Purchase Price</label>
-              <input
-                type="number"
-                name="purchasePrice"
-                value={itemData.purchasePrice}
-                onChange={handleChange}
-                className="w-full px-5 py-4 rounded border dark:bg-gray-700 dark:text-gray-100"
-              />
-            </div>
-
-            <div>
-              <label className="font-semibold">Opening Stock</label>
-              <input
-                type="number"
-                name="openingStock"
-                value={itemData.openingStock}
-                onChange={handleChange}
-                className="w-full px-5 py-4 rounded border dark:bg-gray-700 dark:text-gray-100"
-              />
-            </div>
-          </div>
-
-          {/* Primary + Secondary Button */}
-          <div className="grid grid-cols-2 gap-8">
-            <div>
-              <label className="font-semibold">Primary Unit</label>
-              <input
-                type="text"
-                name="primaryUnit"
-                value={itemData.primaryUnit}
-                onChange={handleChange}
-                className="w-full px-5 py-4 rounded border dark:bg-gray-700 dark:text-gray-100"
-              />
-            </div>
-
-            <div className="flex items-end">
-              <button
-                className="px-6 py-4 bg-blue-600 text-white rounded hover:bg-blue-700"
-                onClick={() => alert("Add Secondary Unit Logic")}
-              >
-                Add Secondary Unit
-              </button>
-            </div>
-          </div>
-
-          {/* Other Fields */}
-          <div className="grid grid-cols-3 gap-8">
-
-            <div>
-              <label className="font-semibold">Item Code</label>
-              <input
-                type="text"
-                name="itemCode"
-                value={itemData.itemCode}
-                onChange={handleChange}
-                className="w-full px-5 py-4 rounded border dark:bg-gray-700 dark:text-gray-100"
-              />
-            </div>
-
-            <div>
-              <label className="font-semibold">HS Code</label>
-              <input
-                type="text"
-                name="hsCode"
-                value={itemData.hsCode}
-                onChange={handleChange}
-                className="w-full px-5 py-4 rounded border dark:bg-gray-700 dark:text-gray-100"
-              />
-            </div>
-
-            <div>
-              <label className="font-semibold">Description</label>
-              <textarea
-                name="description"
-                value={itemData.description}
-                onChange={handleChange}
-                className="w-full px-5 py-4 rounded border dark:bg-gray-700 dark:text-gray-100"
-              />
-            </div>
-          </div>
-
-          {/* Save + Cancel */}
-          <div className="flex justify-end gap-4">
-            <button
-              onClick={() => setShowForm(false)}
-              className="px-8 py-4 bg-gray-300 dark:bg-gray-600 rounded"
-            >
-              Cancel
-            </button>
-
-            <button
-              onClick={handleSave}
-              className="px-8 py-4 bg-green-500 text-white rounded hover:bg-green-600"
-            >
-              Save
-            </button>
-          </div>
+          )}
         </div>
-      )}
-
+      </div>
     </div>
   );
 }

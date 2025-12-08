@@ -1,5 +1,5 @@
 // src/components/ReportPage.jsx
-import React, { useMemo, useRef, useState, useEffect } from "react";
+import React, { useMemo, useRef, useState, useEffect, useContext } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   Search,
@@ -12,6 +12,7 @@ import {
   ChevronRight,
   Check,
 } from "lucide-react";
+import { ThemeContext } from "../context/ThemeContext"; // adjust path if needed
 
 /* REPORTS_MAP (titles/descriptions) */
 const REPORTS_MAP = {
@@ -113,11 +114,21 @@ const PRESETS = [
 export default function ReportPage() {
   const navigate = useNavigate();
   const { reportId } = useParams();
+  const { theme } = useContext(ThemeContext || {});
 
   const info = useMemo(() => {
     const normalized = (reportId || "").toLowerCase();
     return REPORTS_MAP[normalized] || { title: `${prettyTitleFromId(normalized)}`, desc: "" };
   }, [reportId]);
+
+  // Theme CSS variables with sensible fallbacks
+  const pageBg = "var(--surface-200, #f7fafc)"; // light gray
+  const panelBg = "var(--bg-default, #ffffff)";
+  const panelBorder = "var(--border, rgba(0,0,0,0.06))";
+  const textDefault = "var(--text-default, #0f172a)";
+  const muted = "var(--muted, rgba(0,0,0,0.6))";
+  const primary = "var(--primary-500, #16a34a)";
+  const primaryDark = "var(--primary-600, #0f5a3a)";
 
   // status dropdown
   const [statusOpen, setStatusOpen] = useState(false);
@@ -142,7 +153,6 @@ export default function ReportPage() {
   // calendar view month/year
   const [viewYear, setViewYear] = useState(() => startDate.getFullYear());
   const [viewMonth, setViewMonth] = useState(() => startDate.getMonth());
-
   const [selecting, setSelecting] = useState(false);
 
   useEffect(() => {
@@ -269,62 +279,143 @@ export default function ReportPage() {
 
   const weeks = useMemo(() => getMonthMatrix(viewYear, viewMonth), [viewYear, viewMonth]);
 
+  // Basic inline theme-aware styles
+  const pageStyle = {
+    background: pageBg,
+    color: textDefault,
+    minHeight: "100%",
+    padding: "24px",
+  };
+
+  const topBarStyle = {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 24,
+  };
+
+  const controlsRowStyle = {
+    display: "flex",
+    gap: 12,
+    alignItems: "center",
+    marginBottom: 36,
+    width: "100%",
+  };
+
+  const inputBaseStyle = {
+    padding: "10px 12px",
+    borderRadius: 8,
+    border: `1px solid ${panelBorder}`,
+    background: panelBg,
+    color: textDefault,
+  };
+
+  const dropdownStyle = {
+    padding: "8px 10px",
+    borderRadius: 8,
+    border: `1px solid ${panelBorder}`,
+    background: panelBg,
+    color: textDefault,
+    cursor: "pointer",
+  };
+
+  const buttonGhostStyle = {
+    padding: "8px 10px",
+    borderRadius: 8,
+    border: `1px solid ${panelBorder}`,
+    background: panelBg,
+    color: textDefault,
+    display: "flex",
+    gap: 8,
+    alignItems: "center",
+    cursor: "pointer",
+  };
+
+  const smallPaleStyle = {
+    background: panelBg,
+    border: `1px solid ${panelBorder}`,
+    padding: 8,
+    borderRadius: 8,
+    color: muted,
+  };
+
   return (
-    <div className="px-8 pt-6 pb-16 w-full min-h-[600px] flex flex-col">
+    <div style={pageStyle} className="w-full min-h-[600px] flex flex-col">
       {/* Top Bar */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-4">
-          <button onClick={() => navigate(-1)} className="text-gray-600 hover:text-gray-800 p-2 rounded-full" aria-label="Back">
-            <ChevronLeft size={20} />
+      <div style={topBarStyle}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <button
+            onClick={() => navigate(-1)}
+            aria-label="Back"
+            style={{ ...buttonGhostStyle, borderRadius: 999, padding: 8 }}
+            title="Back"
+          >
+            <ChevronLeft size={18} />
           </button>
 
-          <h1 className="text-2xl font-semibold text-gray-800">{info.title}</h1>
+          <h1 style={{ fontSize: 20, fontWeight: 700, color: textDefault }}>{info.title}</h1>
         </div>
 
-        <div className="flex items-center gap-3">
-          <button className="flex items-center gap-2 px-4 py-2 rounded-md bg-gray-100 text-gray-600">
+        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+          <button style={{ ...buttonGhostStyle }}>
             <Printer size={16} />
-            <span className="text-sm">Print PDF</span>
+            <span style={{ fontSize: 13 }}>Print PDF</span>
           </button>
 
-          <button className="flex items-center gap-2 px-4 py-2 rounded-md bg-gray-100 text-gray-600">
+          <button style={{ ...buttonGhostStyle }}>
             <Download size={16} />
-            <span className="text-sm">Download Excel</span>
-            <ChevronDown size={14} className="ml-1" />
+            <span style={{ fontSize: 13 }}>Download Excel</span>
+            <ChevronDown size={14} style={{ marginLeft: 6 }} />
           </button>
         </div>
       </div>
 
       {/* Filters Row */}
-      <div className="flex items-center justify-between gap-4 mb-12">
-        <div className="flex-1 max-w-2xl flex gap-4 items-center">
-          <div className="relative flex-1">
-            <Search size={18} className="absolute top-3 left-3 text-gray-400" />
-            <input className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none" placeholder="Search..." />
+      <div style={controlsRowStyle}>
+        <div style={{ display: "flex", gap: 12, flex: 1, alignItems: "center" }}>
+          <div style={{ position: "relative", flex: 1 }}>
+            <Search size={18} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: muted }} />
+            <input
+              style={{ ...inputBaseStyle, paddingLeft: 40, width: "100%" }}
+              placeholder="Search..."
+              aria-label="Search"
+            />
           </div>
 
           {/* All Status dropdown */}
-          <div className="relative" ref={statusRef}>
+          <div ref={statusRef} style={{ position: "relative" }}>
             <button
               onClick={() => setStatusOpen((s) => !s)}
-              className="px-3 py-2 border border-gray-200 rounded-lg text-sm flex items-center gap-2 bg-white"
+              style={{ ...dropdownStyle, display: "flex", gap: 8, alignItems: "center" }}
             >
-              {selectedStatus} <ChevronDown size={14} />
+              <span>{selectedStatus}</span>
+              <ChevronDown size={14} />
             </button>
 
             {statusOpen && (
-              <div className="absolute mt-2 left-0 w-44 bg-white border border-gray-200 rounded shadow-md z-50">
-                <ul className="p-2">
+              <div style={{ position: "absolute", left: 0, marginTop: 8, width: 180, background: panelBg, border: `1px solid ${panelBorder}`, borderRadius: 8, boxShadow: "0 8px 20px rgba(0,0,0,0.06)", zIndex: 60 }}>
+                <ul style={{ padding: 8, margin: 0, listStyle: "none" }}>
                   {["All Status", "Paid", "Unpaid", "Partially Paid", "Overdue"].map((s) => (
-                    <li
-                      key={s}
-                      onClick={() => {
-                        setSelectedStatus(s);
-                        setStatusOpen(false);
-                      }}
-                      className={`px-3 py-2 rounded cursor-pointer text-sm ${selectedStatus === s ? "bg-emerald-50 text-emerald-600" : "hover:bg-gray-100"}`}
-                    >
-                      {s}
+                    <li key={s} style={{ marginBottom: 4 }}>
+                      <button
+                        onClick={() => {
+                          setSelectedStatus(s);
+                          setStatusOpen(false);
+                        }}
+                        style={{
+                          width: "100%",
+                          textAlign: "left",
+                          padding: "8px 10px",
+                          borderRadius: 6,
+                          fontSize: 13,
+                          background: selectedStatus === s ? "rgba(16,185,129,0.08)" : "transparent",
+                          color: selectedStatus === s ? primaryDark : textDefault,
+                          border: "none",
+                          cursor: "pointer",
+                        }}
+                      >
+                        {s}
+                      </button>
                     </li>
                   ))}
                 </ul>
@@ -333,35 +424,48 @@ export default function ReportPage() {
           </div>
 
           {/* Date/Calendar popover (compact) */}
-          <div className="relative" ref={dateRef}>
+          <div ref={dateRef} style={{ position: "relative" }}>
             <button
               onClick={() => {
                 if (!dateOpen && preset !== "Custom") applyPreset(preset);
                 setDateOpen((d) => !d);
               }}
-              className="px-3 py-2 border border-gray-200 rounded-lg text-sm flex items-center gap-2 bg-white"
+              style={{ ...dropdownStyle, display: "flex", gap: 8, alignItems: "center" }}
             >
               <CalendarIcon size={16} />
-              <span>
+              <span style={{ fontSize: 13 }}>
                 {preset !== "Custom" ? preset : `${formatDisplay(startDate)} → ${formatDisplay(endDate)}`}
               </span>
               {dateOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
             </button>
 
             {dateOpen && (
-              <div className="absolute mt-2 left-0 w-[520px] bg-white border border-gray-200 rounded-lg shadow-lg z-50 p-0 overflow-hidden">
-                <div className="flex">
+              <div style={{ position: "absolute", left: 0, marginTop: 8, width: 520, background: panelBg, border: `1px solid ${panelBorder}`, borderRadius: 10, boxShadow: "0 12px 40px rgba(2,6,23,0.08)", zIndex: 80, overflow: "hidden" }}>
+                <div style={{ display: "flex", minHeight: 320 }}>
                   {/* Left: Presets */}
-                  <div className="w-48 bg-white p-3 border-r border-gray-100">
-                    <ul className="space-y-1">
+                  <div style={{ width: 192, padding: 12, borderRight: `1px solid ${panelBorder}`, background: panelBg }}>
+                    <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
                       {PRESETS.map((p) => (
-                        <li key={p}>
+                        <li key={p} style={{ marginBottom: 6 }}>
                           <button
                             onClick={() => applyPreset(p)}
-                            className={`w-full text-left flex items-center justify-between px-2 py-2 rounded ${preset === p ? "border border-emerald-300 bg-emerald-50 text-emerald-700" : "hover:bg-gray-50"}`}
+                            style={{
+                              width: "100%",
+                              textAlign: "left",
+                              padding: "8px 10px",
+                              borderRadius: 8,
+                              background: preset === p ? "rgba(16,185,129,0.08)" : "transparent",
+                              color: preset === p ? primaryDark : textDefault,
+                              border: "none",
+                              cursor: "pointer",
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                              fontSize: 13,
+                            }}
                           >
-                            <span className="text-sm">{p}</span>
-                            {preset === p && <Check size={14} className="text-emerald-600" />}
+                            <span>{p}</span>
+                            {preset === p && <Check size={14} style={{ color: primaryDark }} />}
                           </button>
                         </li>
                       ))}
@@ -369,26 +473,26 @@ export default function ReportPage() {
                   </div>
 
                   {/* Right: Compact Calendar */}
-                  <div className="flex-1 p-3">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <button onClick={prevMonth} className="p-1 rounded hover:bg-gray-100"><ChevronLeft size={16} /></button>
-                        <div className="text-sm font-medium">
+                  <div style={{ flex: 1, padding: 12 }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <button onClick={prevMonth} style={{ padding: 6, borderRadius: 6, border: `1px solid ${panelBorder}`, background: panelBg }}><ChevronLeft size={16} /></button>
+                        <div style={{ fontSize: 14, fontWeight: 600 }}>
                           {new Date(viewYear, viewMonth, 1).toLocaleString(undefined, { month: "short", year: "numeric" })}
                         </div>
-                        <button onClick={nextMonth} className="p-1 rounded hover:bg-gray-100"><ChevronRight size={16} /></button>
+                        <button onClick={nextMonth} style={{ padding: 6, borderRadius: 6, border: `1px solid ${panelBorder}`, background: panelBg }}><ChevronRight size={16} /></button>
                       </div>
                     </div>
 
                     {/* small calendar box */}
-                    <div className="bg-white border border-gray-100 rounded p-2">
-                      <div className="grid grid-cols-7 gap-1 text-[10px] text-gray-500 mb-1">
+                    <div style={{ background: panelBg, border: `1px solid ${panelBorder}`, borderRadius: 6, padding: 8 }}>
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6, fontSize: 11, color: muted, marginBottom: 6 }}>
                         {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
-                          <div key={d} className="text-center py-1">{d}</div>
+                          <div key={d} style={{ textAlign: "center", padding: 6 }}>{d}</div>
                         ))}
                       </div>
 
-                      <div className="grid grid-cols-7 gap-1">
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6 }}>
                         {weeks.map((week, wi) =>
                           week.map((day, di) => {
                             const isDisabled = !day;
@@ -396,19 +500,27 @@ export default function ReportPage() {
                             const isStart = day && startDate && startOfDay(day).getTime() === startOfDay(startDate).getTime();
                             const isEnd = day && endDate && startOfDay(day).getTime() === startOfDay(endDate).getTime();
 
-                            const base = "h-8 flex items-center justify-center text-xs rounded";
-                            const disabledClass = isDisabled ? "text-gray-300 cursor-default bg-white" : "cursor-pointer";
-                            const rangeClass = isInRange ? "bg-emerald-50 text-emerald-800" : "";
-                            const singleSelected = isStart && isEnd ? "bg-emerald-600 text-white rounded" : "";
-                            const startClass = isStart && !isEnd ? "bg-emerald-600 text-white rounded-l-md" : "";
-                            const endClass = isEnd && !isStart ? "bg-emerald-600 text-white rounded-r-md" : "";
+                            const baseStyle = {
+                              height: 34,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              borderRadius: 6,
+                              fontSize: 12,
+                              cursor: isDisabled ? "default" : "pointer",
+                              background: isStart || isEnd ? primary : isInRange ? "rgba(16,185,129,0.06)" : panelBg,
+                              color: isStart || isEnd ? primaryTextColor(primary) : (isDisabled ? "rgba(0,0,0,0.25)" : textDefault),
+                              border: isStart || isEnd ? `1px solid ${primary}` : `1px solid transparent`,
+                            };
 
                             return (
                               <button
                                 key={`${wi}-${di}`}
                                 onClick={() => handleDayClick(day)}
                                 disabled={isDisabled}
-                                className={`${base} ${disabledClass} ${rangeClass} ${startClass} ${endClass} ${singleSelected}`}
+                                style={baseStyle}
+                                aria-pressed={isInRange}
+                                title={day ? day.toLocaleDateString() : ""}
                               >
                                 {day ? day.getDate() : ""}
                               </button>
@@ -418,34 +530,21 @@ export default function ReportPage() {
                       </div>
                     </div>
 
-                    {/* --- NEW: Pills shown directly BELOW calendar as requested --- */}
-                    <div className="mt-3 flex items-center gap-3">
-                      <div className="px-3 py-1 border border-gray-200 rounded text-xs bg-white">
+                    {/* pills */}
+                    <div style={{ marginTop: 12, display: "flex", gap: 8, alignItems: "center" }}>
+                      <div style={{ padding: "6px 10px", borderRadius: 8, border: `1px solid ${panelBorder}`, background: panelBg, fontSize: 12 }}>
                         {startDate ? toInputDate(startDate) : "—"}
                       </div>
-                      <div className="text-xs text-gray-500">→</div>
-                      <div className="px-3 py-1 border border-gray-200 rounded text-xs bg-white">
+                      <div style={{ color: muted }}>→</div>
+                      <div style={{ padding: "6px 10px", borderRadius: 8, border: `1px solid ${panelBorder}`, background: panelBg, fontSize: 12 }}>
                         {endDate ? toInputDate(endDate) : "—"}
                       </div>
                     </div>
 
                     {/* compact actions */}
-                    <div className="mt-3 flex justify-end gap-2">
-                      <button
-                        onClick={() => setDateOpen(false)}
-                        className="px-3 py-1 rounded border border-gray-200 bg-white text-sm"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        onClick={() => {
-                          setDateOpen(false);
-                          // Hook: fetch data for startDate/endDate/selectedStatus here
-                        }}
-                        className="px-3 py-1 rounded bg-emerald-500 text-white text-sm"
-                      >
-                        Apply
-                      </button>
+                    <div style={{ marginTop: 12, display: "flex", justifyContent: "flex-end", gap: 8 }}>
+                      <button onClick={() => setDateOpen(false)} style={{ padding: "8px 12px", borderRadius: 8, border: `1px solid ${panelBorder}`, background: panelBg }}>Cancel</button>
+                      <button onClick={() => { setDateOpen(false); /* hook to fetch */ }} style={{ padding: "8px 12px", borderRadius: 8, background: primary, color: primaryTextColor(primary) }}>Apply</button>
                     </div>
                   </div>
                 </div>
@@ -455,26 +554,32 @@ export default function ReportPage() {
         </div>
 
         <div>
-          <div className="px-3 py-2 border border-gray-200 rounded-lg text-sm">Sort By</div>
+          <div style={smallPaleStyle}>Sort By</div>
         </div>
       </div>
 
       {/* Empty / placeholder state */}
-      <div className="flex-1 flex flex-col items-center justify-center">
-        <div className="w-[220px] h-[220px] flex items-center justify-center rounded-full bg-gray-100">
-          <div className="w-32 h-40 bg-white rounded-xl shadow-inner flex flex-col items-start justify-start p-3">
-            <div className="h-3 w-12 bg-gray-200 rounded mb-2" />
-            <div className="h-3 w-16 bg-gray-200 rounded mb-2" />
-            <div className="h-3 w-12 bg-gray-200 rounded mb-2" />
-            <div className="h-3 w-8 bg-gray-200 rounded mb-2" />
-            <div className="h-3 w-20 bg-gray-200 rounded" />
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ width: 220, height: 220, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "50%", background: "rgba(0,0,0,0.04)" }}>
+          <div style={{ width: 128, height: 160, background: panelBg, borderRadius: 12, padding: 12, boxShadow: "inset 0 1px 0 rgba(0,0,0,0.02)" }}>
+            <div style={{ height: 10, width: "48%", background: "rgba(0,0,0,0.06)", borderRadius: 6, marginBottom: 8 }} />
+            <div style={{ height: 10, width: "68%", background: "rgba(0,0,0,0.04)", borderRadius: 6, marginBottom: 8 }} />
+            <div style={{ height: 10, width: "48%", background: "rgba(0,0,0,0.04)", borderRadius: 6, marginBottom: 8 }} />
+            <div style={{ height: 10, width: "36%", background: "rgba(0,0,0,0.04)", borderRadius: 6, marginBottom: 8 }} />
+            <div style={{ height: 10, width: "80%", background: "rgba(0,0,0,0.04)", borderRadius: 6 }} />
           </div>
         </div>
 
-        <h2 className="text-xl font-semibold text-gray-800 mt-6">No Transactions Found</h2>
+        <h2 style={{ fontSize: 18, fontWeight: 700, marginTop: 18, color: textDefault }}>No Transactions Found</h2>
 
-        {info.desc && <p className="text-sm text-gray-500 mt-2 max-w-xl text-center">{info.desc}</p>}
+        {info.desc && <p style={{ color: muted, marginTop: 8, maxWidth: 640, textAlign: "center" }}>{info.desc}</p>}
       </div>
     </div>
   );
+}
+
+/* small helper: returns readable text color for primary buttons (white or near-white) */
+function primaryTextColor(primaryVar) {
+  // We can't compute actual contrast here (no DOM computed color), so return white as safe default.
+  return "white";
 }
