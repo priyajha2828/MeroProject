@@ -1,6 +1,10 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 
 export default function QuickPOS() {
+  const navigate = useNavigate();
+
   const [showForm, setShowForm] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
@@ -47,9 +51,22 @@ export default function QuickPOS() {
   return (
     <div className="w-full max-w-6xl mx-auto p-8">
 
-      <h2 className="text-4xl font-bold mb-8 text-gray-900 dark:text-gray-100">
-        Quick POS
-      </h2>
+      {/* ===== HEADER: small arrow on left + large title ===== */}
+      <div className="flex items-center gap-4 mb-6">
+        {/* simple icon button (no colored pill) */}
+        <button
+          onClick={() => navigate(-1)}
+          aria-label="Back"
+          className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
+        >
+          <ArrowLeft size={20} className="text-gray-700 dark:text-gray-200" />
+        </button>
+
+        <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-gray-100">
+          Quick POS
+        </h2>
+      </div>
+      {/* ===================================================== */}
 
       {!showForm && (
         <>
@@ -98,9 +115,7 @@ export default function QuickPOS() {
           {/* Item List */}
           <div className="space-y-3 max-h-[450px] overflow-y-auto border-t pt-4">
             {filteredItems.length === 0 ? (
-              <p className="text-gray-500 dark:text-gray-300">
-                No items found.
-              </p>
+              <p className="text-gray-500 dark:text-gray-300">No items found.</p>
             ) : (
               filteredItems
                 .filter((item) =>
@@ -125,10 +140,21 @@ export default function QuickPOS() {
       {/* Add New Item Form */}
       {showForm && (
         <div className="mt-6 space-y-6 text-lg">
-
           {/* Header */}
-          <div className="flex justify-between">
-            <h3 className="text-3xl font-bold">Add New Item</h3>
+          <div className="flex items-center gap-4 justify-between">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setShowForm(false)}
+                aria-label="Back to list"
+                className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
+              >
+                <ArrowLeft size={18} className="text-gray-700 dark:text-gray-200" />
+              </button>
+
+              <h3 className="text-3xl font-bold">Add New Item</h3>
+            </div>
+
+            {/* This remains your original "Back" button on the right too, kept for parity */}
             <button
               onClick={() => setShowForm(false)}
               className="px-6 py-3 bg-gray-300 dark:bg-gray-600 rounded hover:bg-gray-400"
@@ -237,7 +263,6 @@ export default function QuickPOS() {
 
           {/* Other Fields */}
           <div className="grid grid-cols-3 gap-8">
-
             <div>
               <label className="font-semibold">Item Code</label>
               <input
@@ -289,7 +314,6 @@ export default function QuickPOS() {
           </div>
         </div>
       )}
-
     </div>
   );
 }

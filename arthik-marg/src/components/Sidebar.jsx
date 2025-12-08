@@ -27,12 +27,11 @@ import {
   UserPlus,
 } from "lucide-react";
 import logo from "../assets/logo.png";
+import CreateProfileModal from "./CreateProfileModal"; // adjust path if needed
 
-// Define constants
 const COLLAPSED_WIDTH = "w-16 p-2";
-const EXPANDED_WIDTH = "w-96 p-6"; // keep your original wide sidebar
+const EXPANDED_WIDTH = "w-96 p-6";
 const ICON_SIZE = 20;
-
 const CUSTOM_BLUE = "bg-[#172554]";
 
 export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
@@ -47,6 +46,9 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
 
   const [hoverToggle, setHoverToggle] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+
+  // Modal visibility state
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   // ROUTING LOGIC
   const handleSetActive = (id) => {
@@ -92,6 +94,11 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
     }
   };
 
+  // Open modal when user clicks "Create New Profile"
+  const openCreateProfileModal = () => {
+    setShowCreateModal(true);
+  };
+
   return (
     <>
       <div
@@ -99,7 +106,6 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
           sidebarOpen ? EXPANDED_WIDTH : COLLAPSED_WIDTH
         }`}
       >
-        {/* INTERNAL TOGGLE */}
         {sidebarOpen && (
           <div
             className="absolute top-4 right-4 bg-white shadow p-2 rounded cursor-pointer z-50"
@@ -111,7 +117,6 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
           </div>
         )}
 
-        {/* EXTERNAL TOGGLE */}
         {!sidebarOpen && (
           <div
             className="absolute top-4 right-4 bg-white shadow p-2 rounded cursor-pointer z-50"
@@ -123,7 +128,6 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
           </div>
         )}
 
-        {/* Logo */}
         {sidebarOpen && (
           <div className="flex items-center gap-2 mb-6">
             <img src={logo} className="w-20 h-20 object-contain" alt="Karobar Logo" />
@@ -131,12 +135,13 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
           </div>
         )}
 
-        {/* Profile */}
         {sidebarOpen && (
           <div className="mb-5">
             <div
               className={`border py-4 px-3 rounded-lg flex items-center justify-between cursor-pointer ${
-                isProfileOpen ? `${CUSTOM_BLUE} text-white` : "border-gray-300 text-white hover:bg-gray-100"
+                isProfileOpen
+                  ? `${CUSTOM_BLUE} text-white`
+                  : "border-gray-300 text-white hover:bg-gray-100"
               }`}
               onClick={() => setIsProfileOpen(!isProfileOpen)}
             >
@@ -155,10 +160,22 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
 
             {isProfileOpen && (
               <ul className="mt-1 space-y-1">
-                <li className="pl-4 pr-2 py-2 hover:bg-gray-200 rounded flex items-center gap-3 cursor-pointer">
+                <li
+                  className="pl-4 pr-2 py-2 hover:bg-gray-200 rounded flex items-center gap-3 cursor-pointer"
+                  onClick={() => {
+                    // navigate to profile page if you have one
+                    setActiveState("my-profile");
+                    navigate("/profile"); // adjust route as needed
+                  }}
+                >
                   <User size={18} /> My Profile
                 </li>
-                <li className="pl-4 pr-2 py-2 hover:bg-gray-200 rounded flex items-center gap-3 cursor-pointer">
+
+                {/* Make Create New Profile clickable to open modal */}
+                <li
+                  className="pl-4 pr-2 py-2 hover:bg-gray-200 rounded flex items-center gap-3 cursor-pointer"
+                  onClick={openCreateProfileModal}
+                >
                   <UserPlus size={18} /> Create New Profile
                 </li>
               </ul>
@@ -166,7 +183,6 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
           </div>
         )}
 
-        {/* ——— BUSINESS ——— */}
         {sidebarOpen && <p className="text-gray-500 font-semibold mb-2">Business</p>}
 
         <ul className="space-y-1">
@@ -181,6 +197,7 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
             <Dropdown label="Sales" icon={<Receipt size={ICON_SIZE} />} open={openSales} setOpen={setOpenSales} sidebarOpen={sidebarOpen}>
               <DropItem label="Sales Invoice" id="sales-invoice" active={activePage} setActive={handleSetActive} />
               <DropItem label="Payment In" id="payment-in" active={activePage} setActive={handleSetActive} />
+              <DropItem label="Quotation" id="quotation" active={activePage} setActive={handleSetActive} />
               <DropItem label="Sales Return" id="sales-return" active={activePage} setActive={handleSetActive} />
             </Dropdown>
           </li>
@@ -198,26 +215,23 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
 
           <SidebarItem label="Other Income" icon={<Wallet size={ICON_SIZE} />} id="other-income" active={activePage} setActive={handleSetActive} open={sidebarOpen} />
 
-          <SidebarItem label="Manage Accounts" icon={<Building size={ICON_SIZE} />} id="accounts" active={activePage} setActive={handleSetActive} open={sidebarOpen} />
+          <SidebarItem label="Manage Accounts" icon={<Building size={ICON_SIZE} />} id="manage-accounts" active={activePage} setActive={handleSetActive} open={sidebarOpen} />
         </ul>
 
-        {/* ——— MANAGEMENT ——— */}
         {sidebarOpen && <p className="text-gray-500 font-semibold mt-6 mb-2">Management</p>}
 
         <ul className="space-y-1">
           <SidebarItem label="Reports" icon={<BarChart2 size={ICON_SIZE} />} id="reports" active={activePage} setActive={handleSetActive} open={sidebarOpen} />
 
-          {/* ✅ FIXED: Correct ID for Manage Staffs */}
           <SidebarItem
             label="Manage Staffs"
             icon={<Users2 size={ICON_SIZE} />}
-            id="manage-staffs"   // <-- FIXED
+            id="manage-staffs"
             active={activePage}
             setActive={handleSetActive}
             open={sidebarOpen}
           />
 
-          {/* Import */}
           <li>
             <Dropdown label="Import Data" icon={<FileUp size={ICON_SIZE} />} open={openImport} setOpen={setOpenImport} sidebarOpen={sidebarOpen}>
               <DropItem label="Import Parties" id="import-parties" active={activePage} setActive={handleSetActive} />
@@ -225,20 +239,30 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
             </Dropdown>
           </li>
 
-          {/* Business Tools */}
           <li>
             <Dropdown label="Business Tools" icon={<Wrench size={ICON_SIZE} />} open={openBusinessTools} setOpen={setOpenBusinessTools} sidebarOpen={sidebarOpen}>
-              {/* changed to singular id to match your route */}
               <DropItem label="Business Card" id="business-card" active={activePage} setActive={handleSetActive} />
               <DropItem label="Greeting Card" id="greeting-card" active={activePage} setActive={handleSetActive} />
-              <DropItem label="Reminders" id="reminders" active={activePage} setActive={handleSetActive} />
+              {/* Reminders: navigate with state to auto-open modal on the page */}
+              <li
+                onClick={() => {
+                  setActiveState("reminders");
+                  navigate("/reminders", { state: { openCreate: true } });
+                }}
+                className={`p-2 text-base rounded cursor-pointer transition ${
+                  activePage === "reminders"
+                    ? `${CUSTOM_BLUE} text-white`
+                    : `text-gray-700 hover:bg-gray-200 hover:text-black`
+                }`}
+              >
+                Reminders
+              </li>
               <DropItem label="Bill Gallery" id="bill-gallery" active={activePage} setActive={handleSetActive} />
               <DropItem label="Notebook" id="notebook" active={activePage} setActive={handleSetActive} />
             </Dropdown>
           </li>
         </ul>
 
-        {/* ——— OTHERS ——— */}
         {sidebarOpen && <p className="text-gray-500 font-semibold mt-6 mb-2">Others</p>}
 
         <ul className="space-y-1">
@@ -248,13 +272,13 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
           <SidebarItem label="Settings" icon={<Settings size={ICON_SIZE} />} id="settings" active={activePage} setActive={handleSetActive} open={sidebarOpen} />
         </ul>
       </div>
+
+      {/* Create Profile Modal */}
+      <CreateProfileModal open={showCreateModal} onClose={() => setShowCreateModal(false)} />
     </>
   );
 }
 
-// ——————————————————————————————
-// HELPER COMPONENTS
-// ——————————————————————————————
 function SidebarItem({ label, icon, active, id, setActive, open }) {
   return (
     <li

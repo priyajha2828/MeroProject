@@ -1,5 +1,7 @@
-import { useState } from "react";
+// src/components/Dashboard.jsx
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+
 import Card from "./Card";
 import AddReminder from "./AddReminder";
 import CompleteProfile from "./CompleteProfile";
@@ -22,14 +24,39 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
+// FORM PANELS (must exist and accept directOpen + embedded + onClose)
+import PaymentInForm from "./PaymentIn";
+import PaymentOutForm from "./PaymentOut";
+import CreateQuotation from "./CreateQuotation";
+import SalesReturn from "./SalesReturn";
+import PurchaseReturn from "./PurchaseReturn";
+import { ExpensePage } from "./ExpensePage";
+import { OtherIncomePage } from "./OtherIncomePage";
+
 export default function Dashboard() {
   const navigate = useNavigate();
 
+  const [showAddMore, setShowAddMore] = useState(false);
+
+  // Modal flags
+  const [showPaymentIn, setShowPaymentIn] = useState(false);
+  const [showPaymentOut, setShowPaymentOut] = useState(false);
+  const [showQuotationCreate, setShowQuotationCreate] = useState(false);
+  const [showSalesReturnCreate, setShowSalesReturnCreate] = useState(false);
+  const [showPurchaseReturnCreate, setShowPurchaseReturnCreate] =
+    useState(false);
+  const [showExpenseCreate, setShowExpenseCreate] = useState(false);
+  const [showIncomeCreate, setShowIncomeCreate] = useState(false);
+
   const [showReminder, setShowReminder] = useState(false);
   const [reminders, setReminders] = useState([]);
+
   const [showProfile, setShowProfile] = useState(false);
   const [profileData, setProfileData] = useState(null);
-  const [showAddMore, setShowAddMore] = useState(false);
+
+  const handleSaveReminder = (newReminder) => {
+    setReminders((prev) => [...prev, newReminder]);
+  };
 
   const cashflowData = [
     { day: "Mon", income: 2000, expense: 1500 },
@@ -41,17 +68,13 @@ export default function Dashboard() {
     { day: "Sun", income: 4000, expense: 2200 },
   ];
 
-  const handleSaveReminder = (newReminder) => {
-    setReminders([...reminders, newReminder]);
-  };
-
   const buttonBaseClass = "px-4 py-2 rounded-xl text-white hover:opacity-90";
 
   return (
     <div className="p-4">
-      {/* Header */}
+      {/* HEADER */}
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-3xl font-bold">Welcome Rejina Agrawal</h2>
+        <h2 className="text-3xl font-bold">Welcome</h2>
 
         <div className="flex gap-3 relative">
           <button
@@ -75,87 +98,61 @@ export default function Dashboard() {
             + Add Purchase
           </button>
 
-          {/* Add More Dropdown */}
+          {/* ADD MORE DROPDOWN */}
           <div className="relative">
             <button
-              onClick={() => setShowAddMore(!showAddMore)}
+              onClick={() => setShowAddMore((prev) => !prev)}
               className={`${buttonBaseClass} bg-[#072255] flex items-center gap-1`}
             >
               + Add More ▼
             </button>
 
             {showAddMore && (
-              <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-xl shadow-lg z-50">
-                <button
-                  onClick={() => navigate("/payment-in")}
-                  className="flex items-center gap-2 w-full px-4 py-2 hover:bg-gray-100 rounded-t-xl"
-                >
-                  <DollarSign size={16} /> Payment In
-                </button>
+              <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-xl shadow-lg z-50">
 
-                <button
-                  onClick={() => navigate("/payment-out")}
-                  className="flex items-center gap-2 w-full px-4 py-2 hover:bg-gray-100"
-                >
-                  <CreditCard size={16} /> Payment Out
-                </button>
+                <DropdownBtn label="Payment In" icon={<DollarSign size={16} />}
+                  onClick={() => { setShowAddMore(false); setShowPaymentIn(true); }}
+                />
 
-                <button
-                  onClick={() => navigate("/quotation")}
-                  className="flex items-center gap-2 w-full px-4 py-2 hover:bg-gray-100"
-                >
-                  <ShoppingCart size={16} /> Quotation
-                </button>
+                <DropdownBtn label="Payment Out" icon={<CreditCard size={16} />}
+                  onClick={() => { setShowAddMore(false); setShowPaymentOut(true); }}
+                />
 
-                <button
-                  onClick={() => navigate("/sales-return")}
-                  className="flex items-center gap-2 w-full px-4 py-2 hover:bg-gray-100"
-                >
-                  <Package size={16} /> Sales Return
-                </button>
+                <DropdownBtn label="Quotation" icon={<ShoppingCart size={16} />}
+                  onClick={() => { setShowAddMore(false); setShowQuotationCreate(true); }}
+                />
 
-                <button
-                  onClick={() => navigate("/purchase-return")}
-                  className="flex items-center gap-2 w-full px-4 py-2 hover:bg-gray-100"
-                >
-                  <Package size={16} /> Purchase Return
-                </button>
+                <DropdownBtn label="Sales Return" icon={<Package size={16} />}
+                  onClick={() => { setShowAddMore(false); setShowSalesReturnCreate(true); }}
+                />
 
-                <button
-                  onClick={() => navigate("/expense-insights")}
-                  className="flex items-center gap-2 w-full px-4 py-2 hover:bg-gray-100"
-                >
-                  <BarChart2 size={16} /> Expense
-                </button>
+                <DropdownBtn label="Purchase Return" icon={<Package size={16} />}
+                  onClick={() => { setShowAddMore(false); setShowPurchaseReturnCreate(true); }}
+                />
 
-                <button
-                  onClick={() => navigate("/income")}
-                  className="flex items-center gap-2 w-full px-4 py-2 hover:bg-gray-100 rounded-b-xl"
-                >
-                  <DollarSign size={16} /> Income
-                </button>
+                <DropdownBtn label="Expense" icon={<BarChart2 size={16} />}
+                  onClick={() => { setShowAddMore(false); setShowExpenseCreate(true); }}
+                />
+
+                <DropdownBtn label="Income" icon={<DollarSign size={16} />}
+                  onClick={() => { setShowAddMore(false); setShowIncomeCreate(true); }}
+                />
               </div>
             )}
           </div>
         </div>
       </div>
 
-      {/* Cashflow */}
+      {/* CASHFLOW WIDGET */}
       <div className="bg-white p-4 rounded-xl shadow mb-6">
         <h3 className="font-semibold mb-4">Cashflow (Last 7 Days)</h3>
-
         <div className="h-56">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={cashflowData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+              <CartesianGrid stroke="#e5e7eb" strokeDasharray="3 3" />
               <XAxis dataKey="day" stroke="#6b7280" />
               <YAxis stroke="#6b7280" />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "#f3f4f6",
-                  borderRadius: 8,
-                }}
-              />
+              <Tooltip />
               <Line type="monotone" dataKey="income" stroke="#10B981" strokeWidth={2} />
               <Line type="monotone" dataKey="expense" stroke="#EF4444" strokeWidth={2} />
             </LineChart>
@@ -163,104 +160,91 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Cards */}
+      {/* CARDS */}
       <div className="grid grid-cols-5 gap-4 mb-4">
-        <Card
-          title="To Receive"
-          amount="Rs. 0"
-          color="bg-emerald-50"
-          icon={<DollarSign size={20} />}
-          onClick={() => navigate("/to-receive")}
-        />
+        <Card title="To Receive" amount="Rs. 0" color="bg-emerald-50"
+          icon={<DollarSign size={20} />} onClick={() => navigate("/to-receive")} />
 
-        <Card
-          title="To Give"
-          amount="Rs. 0"
-          color="bg-pink-50"
-          icon={<CreditCard size={20} />}
-          onClick={() => navigate("/to-give")}
-        />
+        <Card title="To Give" amount="Rs. 0" color="bg-pink-50"
+          icon={<CreditCard size={20} />} onClick={() => navigate("/to-give")} />
 
-        <Card
-          title="Sales"
-          amount="Rs. 0"
-          color="bg-emerald-50"
-          icon={<ShoppingCart size={20} />}
-          onClick={() => navigate("/sale-insights")}
-        />
+        <Card title="Sales" amount="Rs. 0" color="bg-emerald-50"
+          icon={<ShoppingCart size={20} />} onClick={() => navigate("/sale-insights")} />
 
-        <Card
-          title="Purchase"
-          amount="Rs. 0"
-          color="bg-sky-50"
-          icon={<Package size={20} />}
-          onClick={() => navigate("/purchase-insights")}
-        />
+        <Card title="Purchase" amount="Rs. 0" color="bg-sky-50"
+          icon={<Package size={20} />} onClick={() => navigate("/purchase-insights")} />
 
-        <Card
-          title="Expense"
-          amount="Rs. 0"
-          color="bg-indigo-50"
-          icon={<BarChart2 size={20} />}
-          onClick={() => navigate("/expense-insights")}
-        />
+        <Card title="Expense" amount="Rs. 0" color="bg-indigo-50"
+          icon={<BarChart2 size={20} />} onClick={() => navigate("/expense-insights")} />
       </div>
 
-      {/* Panels */}
+      {/* PANELS */}
       <div className="grid grid-cols-3 gap-4 mb-8">
-        {/* Reminders */}
-        <div className="bg-white p-4 rounded-xl shadow min-h-40">
-          <div className="text-sm text-gray-500">
-            Upcoming Reminders ({reminders.length})
-          </div>
+        <ReminderPanel
+          reminders={reminders}
+          open={() => setShowReminder(true)}
+        />
 
-          {reminders.length === 0 ? (
-            <div className="mt-2 text-gray-600">
-              Looks like you haven't created any reminders yet.
-            </div>
-          ) : (
-            <ul className="mt-2 list-disc list-inside">
-              {reminders.map((r, i) => (
-                <li key={i}>
-                  {r.title} - {new Date(r.dateTime).toLocaleString()} ({r.type})
-                </li>
-              ))}
-            </ul>
-          )}
+        <BalancePanel />
 
-          <button
-            onClick={() => setShowReminder(true)}
-            className={`${buttonBaseClass} bg-[#072255] mt-3`}
-          >
-            Add New Reminder
-          </button>
-        </div>
-
-        {/* Balance */}
-        <div className="bg-white p-4 rounded-xl shadow min-h-40 flex flex-col justify-between">
-          <div>
-            <div className="text-sm text-gray-500">Total Balance (Cash & Bank)</div>
-            <div className="text-2xl font-semibold mt-2">Rs. 0</div>
-          </div>
-        </div>
-
-        {/* Profile */}
-        <div className="bg-white p-4 rounded-xl shadow min-h-40 flex flex-col justify-between">
-          <div>
-            <div className="text-sm text-gray-500">Complete your Profile</div>
-            <div className="font-semibold text-lg">{profileData ? "100%" : "30%"}</div>
-          </div>
-
-          <button
-            onClick={() => setShowProfile(true)}
-            className={`${buttonBaseClass} bg-[#072255] mt-4`}
-          >
-            Complete Profile
-          </button>
-        </div>
+        <ProfilePanel
+          profileData={profileData}
+          open={() => setShowProfile(true)}
+        />
       </div>
 
-      {/* Modals */}
+      {/* ================= MODALS FROM ADD MORE ================= */}
+
+      {/* PAYMENT IN */}
+      {showPaymentIn && (
+        <ModalShell onClose={() => setShowPaymentIn(false)}>
+          <PaymentInForm directOpen embedded onClose={() => setShowPaymentIn(false)} />
+        </ModalShell>
+      )}
+
+      {/* PAYMENT OUT */}
+      {showPaymentOut && (
+        <ModalShell onClose={() => setShowPaymentOut(false)}>
+          <PaymentOutForm directOpen embedded onClose={() => setShowPaymentOut(false)} />
+        </ModalShell>
+      )}
+
+      {/* QUOTATION */}
+      {showQuotationCreate && (
+        <ModalShell onClose={() => setShowQuotationCreate(false)}>
+          <CreateQuotation directOpen embedded onClose={() => setShowQuotationCreate(false)} />
+        </ModalShell>
+      )}
+
+      {/* SALES RETURN */}
+      {showSalesReturnCreate && (
+        <ModalShell onClose={() => setShowSalesReturnCreate(false)}>
+          <SalesReturn directOpen embedded onClose={() => setShowSalesReturnCreate(false)} />
+        </ModalShell>
+      )}
+
+      {/* PURCHASE RETURN */}
+      {showPurchaseReturnCreate && (
+        <ModalShell onClose={() => setShowPurchaseReturnCreate(false)}>
+          <PurchaseReturn directOpen embedded onClose={() => setShowPurchaseReturnCreate(false)} />
+        </ModalShell>
+      )}
+
+      {/* EXPENSE */}
+      {showExpenseCreate && (
+        <ModalShell onClose={() => setShowExpenseCreate(false)}>
+          <ExpensePage directOpen embedded onClose={() => setShowExpenseCreate(false)} />
+        </ModalShell>
+      )}
+
+      {/* INCOME */}
+      {showIncomeCreate && (
+        <ModalShell onClose={() => setShowIncomeCreate(false)}>
+          <OtherIncomePage directOpen embedded onClose={() => setShowIncomeCreate(false)} />
+        </ModalShell>
+      )}
+
+      {/* REMINDER */}
       {showReminder && (
         <AddReminder
           onClose={() => setShowReminder(false)}
@@ -268,12 +252,101 @@ export default function Dashboard() {
         />
       )}
 
+      {/* PROFILE */}
       {showProfile && (
         <CompleteProfile
           onClose={() => setShowProfile(false)}
           onSave={(data) => setProfileData(data)}
         />
       )}
+    </div>
+  );
+}
+
+/* ------------------------ SMALL COMPONENTS ------------------------ */
+
+function ModalShell({ children, onClose }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-start justify-center p-6 bg-black/40 overflow-auto">
+      <div className="relative bg-white rounded-lg shadow-lg w-full max-w-4xl mt-10">
+        <button
+          onClick={onClose}
+          className="absolute right-4 top-4 text-gray-600 hover:text-black"
+        >
+          ✕
+        </button>
+        <div className="p-6">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+function DropdownBtn({ label, icon, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex items-center gap-2 w-full px-4 py-2 hover:bg-gray-100"
+    >
+      {icon} {label}
+    </button>
+  );
+}
+
+function ReminderPanel({ reminders, open }) {
+  return (
+    <div className="bg-white p-4 rounded-xl shadow min-h-40">
+      <div className="text-sm text-gray-500">
+        Upcoming Reminders ({reminders.length})
+      </div>
+      {reminders.length === 0 ? (
+        <div className="mt-2 text-gray-600">
+          Looks like you haven't created any reminders yet.
+        </div>
+      ) : (
+        <ul className="mt-2 list-disc list-inside">
+          {reminders.map((r, i) => (
+            <li key={i}>
+              {r.title} - {new Date(r.dateTime).toLocaleString()} ({r.type})
+            </li>
+          ))}
+        </ul>
+      )}
+      <button
+        onClick={open}
+        className="px-4 py-2 rounded-xl text-white bg-[#072255] mt-3"
+      >
+        Add New Reminder
+      </button>
+    </div>
+  );
+}
+
+function BalancePanel() {
+  return (
+    <div className="bg-white p-4 rounded-xl shadow min-h-40 flex flex-col justify-between">
+      <div>
+        <div className="text-sm text-gray-500">Total Balance (Cash & Bank)</div>
+        <div className="text-2xl font-semibold mt-2">Rs. 0</div>
+      </div>
+    </div>
+  );
+}
+
+function ProfilePanel({ profileData, open }) {
+  return (
+    <div className="bg-white p-4 rounded-xl shadow min-h-40 flex flex-col justify-between">
+      <div>
+        <div className="text-sm text-gray-500">Complete your Profile</div>
+        <div className="font-semibold text-lg">
+          {profileData ? "100%" : "30%"}
+        </div>
+      </div>
+      <button
+        onClick={open}
+        className="px-4 py-2 rounded-xl text-white bg-[#072255] mt-4"
+      >
+        Complete Profile
+      </button>
     </div>
   );
 }

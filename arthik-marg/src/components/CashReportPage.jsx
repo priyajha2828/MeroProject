@@ -312,7 +312,7 @@ export default function CashReportPage() {
   /* ---------- Printing via hidden iframe (unchanged) ---------- */
   const buildPrintableHtml = () => {
     const companyName = "Something";
-    const companyPhone = "9820318653";
+    const companyPhone = "9820318652";
     const logoSvg = `<svg width="90" height="28" viewBox="0 0 90 28" xmlns="http://www.w3.org/2000/svg"><rect x="0" y="2" width="18" height="24" rx="3" fill="#10B981" /></svg>`;
 
     const fromLabel = appliedRangeBs.start || (filterRange.start ? formatAD(filterRange.start) : "—");
