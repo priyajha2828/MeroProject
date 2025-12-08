@@ -5,6 +5,37 @@ import * as XLSX from "xlsx";
 import Calendar from "@sbmdkl/nepali-datepicker-reactjs";
 import "@sbmdkl/nepali-datepicker-reactjs/dist/index.css";
 
+/* ---------- Theme detection helpers ---------- */
+function detectTheme() {
+  if (typeof document === "undefined") return "light";
+  const html = document.documentElement;
+  const dt = html?.dataset?.theme;
+  if (dt) return dt === "dark" ? "dark" : "light";
+  if (html?.classList?.contains("dark")) return "dark";
+  const ls = typeof window !== "undefined" ? window.localStorage?.getItem("theme") : null;
+  if (ls) return ls === "dark" ? "dark" : "light";
+  return "light";
+}
+
+function useThemeWatcher() {
+  const [theme, setTheme] = useState(detectTheme());
+  useEffect(() => {
+    function onStorage(e) {
+      if (e.key === "theme") setTheme(e.newValue === "dark" ? "dark" : "light");
+    }
+    const mo = new MutationObserver(() => setTheme(detectTheme()));
+    mo.observe(document.documentElement, { attributes: true, attributeFilter: ["class", "data-theme"] });
+    window.addEventListener("storage", onStorage);
+    const tick = setInterval(() => setTheme(detectTheme()), 1000);
+    return () => {
+      mo.disconnect();
+      window.removeEventListener("storage", onStorage);
+      clearInterval(tick);
+    };
+  }, []);
+  return theme;
+}
+
 /* ---------- Date helpers (AD) ---------- */
 const pad2 = (n) => `${n}`.padStart(2, "0");
 const formatAD = (d) => {
@@ -96,7 +127,7 @@ const keyForRange = (range) => {
   return null;
 };
 
-/* ---------- month-grid calendar helpers (copied/adapted from ManageAccountsPage.jsx) ---------- */
+/* ---------- month-grid calendar helpers ---------- */
 function getMonthMatrix(year, month) {
   const first = new Date(year, month, 1);
   const last = new Date(year, month + 1, 0);
@@ -130,6 +161,19 @@ export default function CashReportPage() {
   const closingBalance = (location.state && location.state.closingBalance) || 0;
   const printRef = useRef(null);
 
+  // theme
+  const theme = useThemeWatcher();
+  const isDark = theme === "dark";
+
+  // colors / surfaces
+  const pageBg = isDark ? "#071029" : "#F3F4F6"; // light grey page bg
+  const panelBg = isDark ? "#071425" : "#FFFFFF";
+  const panelBorder = isDark ? "rgba(255,255,255,0.04)" : "rgba(15,23,42,0.04)";
+  const mutedText = isDark ? "#9CA3AF" : "#6B7280";
+  const textColor = isDark ? "#E6EEF8" : "#0F172A";
+  const controlBg = isDark ? "#082033" : "#FFFFFF";
+  const controlBorder = isDark ? "rgba(255,255,255,0.04)" : "#E5E7EB";
+
   // UI state
   const [searchTerm, setSearchTerm] = useState("");
   const [filterRange, setFilterRange] = useState({ start: null, end: null });
@@ -158,7 +202,6 @@ export default function CashReportPage() {
   const weeks = useMemo(() => getMonthMatrix(viewYear, viewMonth), [viewYear, viewMonth]);
 
   useEffect(() => {
-    // when picker opens, set calendar to the month containing the start (or today)
     if (!showPicker) return;
     const d = tempRange.start ? new Date(tempRange.start) : new Date();
     setViewYear(d.getFullYear());
@@ -181,14 +224,12 @@ export default function CashReportPage() {
     const scrollY = window.scrollY || window.pageYOffset || 0;
 
     let left = scrollX + (btn ? btn.left : Math.max(8, (window.innerWidth - popW) / 2));
-    // ensure not overflow right
     if (left + popW > scrollX + window.innerWidth - 12) {
       left = scrollX + window.innerWidth - popW - 12;
     }
     if (left < scrollX + 8) left = scrollX + 8;
 
     let top = scrollY + (btn ? btn.bottom : Math.max(80, (window.innerHeight - popH) / 2));
-    // if would overflow bottom, show above the button
     if (top + popH > scrollY + window.innerHeight - 12 && btn) {
       top = scrollY + btn.top - popH - 8;
     }
@@ -206,7 +247,6 @@ export default function CashReportPage() {
     setShowStartInlineCal(false);
     setShowEndInlineCal(false);
 
-    // show month of start (or today) in big calendar
     const d = s ? new Date(s) : new Date();
     setViewYear(d.getFullYear());
     setViewMonth(d.getMonth());
@@ -309,7 +349,7 @@ export default function CashReportPage() {
     XLSX.writeFile(workbook, `Cash_Report${accountId ? `_${accountId}` : ""}.xlsx`);
   }
 
-  /* ---------- Printing via hidden iframe (unchanged) ---------- */
+  /* ---------- Printing via hidden iframe (unchanged logic) ---------- */
   const buildPrintableHtml = () => {
     const companyName = "Something";
     const companyPhone = "9820318652";
@@ -539,7 +579,7 @@ export default function CashReportPage() {
     return () => document.removeEventListener("mousedown", onDocDown);
   }, [showPicker]);
 
-  // ---------- big calendar click handler & range helpers ----------
+  // ---------- big calendar helpers ----------
   const dayKey = (d) => {
     if (!d) return null;
     return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
@@ -552,15 +592,14 @@ export default function CashReportPage() {
 
   const inRange = (day, start, end) => {
     if (!day || !start || !end) return false;
-    const t = day.setHours(0, 0, 0, 0);
-    const s = new Date(start).setHours(0, 0, 0, 0);
-    const e = new Date(end).setHours(0, 0, 0, 0);
+    const t = new Date(day.getFullYear(), day.getMonth(), day.getDate()).getTime();
+    const s = new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime();
+    const e = new Date(end.getFullYear(), end.getMonth(), end.getDate()).getTime();
     return t >= s && t <= e;
   };
 
   const handleBigCalDayClick = (day) => {
     if (!day) return;
-    // pick start then end
     if (!tempRange.start || (tempRange.start && tempRange.end)) {
       setTempRange({ start: startOfDay(day), end: null });
       setTempRangeBs({ start: "", end: "" });
@@ -569,7 +608,6 @@ export default function CashReportPage() {
       const a = startOfDay(tempRange.start);
       const b = startOfDay(day);
       if (b.getTime() < a.getTime()) {
-        // if clicked before start, treat as new start
         setTempRange({ start: startOfDay(day), end: null });
       } else {
         setTempRange({ start: a, end: endOfDay(b) });
@@ -602,228 +640,251 @@ export default function CashReportPage() {
 
   // ---------- RENDER ----------
   return (
-    <div className="p-8 max-w-7xl mx-auto relative">
-      {/* header & controls */}
-      <div className="flex items-start justify-between mb-6">
-        <div className="flex-1">
-          <div className="flex items-center gap-4 mb-2">
-            <button onClick={() => navigate(-1)} className="text-gray-600 hover:underline">
-              ←
-            </button>
-            <div>
-              <h1 className="text-2xl font-semibold">Cash In Hand Statement</h1>
-              <span className="text-sm text-gray-500">({accountId || "all"})</span>
-            </div>
-          </div>
-
-          <div className="mt-3 flex flex-wrap items-center gap-3">
-            <input
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search transactions (date, type, remarks, amount...)"
-              className="border rounded-lg px-4 py-2 w-64 focus:outline-none"
-            />
-
-            {/* Date range button that opens picker */}
-            <div className="relative">
-              <button
-                ref={pickerButtonRef}
-                onClick={() => {
-                  if (!showPicker) openPicker();
-                  else setShowPicker(false);
-                }}
-                className="px-4 py-2 rounded-lg border bg-white text-gray-700"
-              >
-                {selectedRangeLabel()}
+    <div style={{ background: pageBg, minHeight: "100vh", padding: 24 }}>
+      <div className="max-w-7xl mx-auto relative" style={{ color: textColor }}>
+        {/* header & controls */}
+        <div className="flex items-start justify-between mb-6">
+          <div className="flex-1">
+            <div className="flex items-center gap-4 mb-2">
+              <button onClick={() => navigate(-1)} className="text-gray-600 hover:underline" style={{ color: mutedText }}>
+                ←
               </button>
+              <div>
+                <h1 className="text-2xl font-semibold" style={{ color: textColor }}>
+                  Cash In Hand Statement
+                </h1>
+                <span className="text-sm" style={{ color: mutedText }}>
+                  ({accountId || "all"})
+                </span>
+              </div>
+            </div>
 
-              {/* FIXED position picker (two-column UI like screenshot) */}
-              {showPicker && (
-                <div
-                  ref={pickerRef}
-                  className="fixed z-50 bg-white border rounded-lg shadow-lg p-4 grid grid-cols-[200px_1fr] gap-4"
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              <input
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search transactions (date, type, remarks, amount...)"
+                className="border rounded-lg px-4 py-2 w-64 focus:outline-none"
+                style={{
+                  background: controlBg,
+                  borderColor: controlBorder,
+                  color: textColor,
+                }}
+              />
+
+              {/* Date range button that opens picker */}
+              <div className="relative">
+                <button
+                  ref={pickerButtonRef}
+                  onClick={() => {
+                    if (!showPicker) openPicker();
+                    else setShowPicker(false);
+                  }}
+                  className="px-4 py-2 rounded-lg border"
                   style={{
-                    top: pickerPos.top,
-                    left: pickerPos.left,
-                    width: pickerPos.width,
-                    maxWidth: "calc(100% - 24px)",
+                    background: controlBg,
+                    borderColor: controlBorder,
+                    color: textColor,
                   }}
                 >
-                  {/* LEFT: quick ranges */}
-                  <div className="border-r pr-3">
-                    <ul className="text-sm space-y-2">
-                      {[
-                        { key: "all", label: "All Date" },
-                        { key: "today", label: "Today" },
-                        { key: "yesterday", label: "Yesterday" },
-                        { key: "thisWeek", label: "This Week" },
-                        { key: "thisMonth", label: "This Month" },
-                        { key: "lastMonth", label: "Last Month" },
-                        { key: "thisFiscalYear", label: "This Fiscal Year" },
-                        { key: "thisYear", label: "This Year" },
-                      ].map((it) => {
-                        const isTempActive = tempQuickKey === it.key;
-                        const isAppliedActive = appliedQuick === it.key;
-                        return (
-                          <li key={it.key}>
-                            <button
-                              onClick={() => applyQuickRangeToTemp(it.key)}
-                              className={`w-full text-left px-3 py-2 rounded flex items-center justify-between ${
-                                isTempActive ? "border-2 border-green-300 bg-green-50 text-green-800 rounded-lg" : "hover:bg-gray-50"
-                              }`}
-                            >
-                              <span>{it.label}</span>
-                              {isTempActive && (
-                                <span className="ml-2">
-                                  <CheckIcon />
-                                </span>
-                              )}
-                              {!isTempActive && isAppliedActive && <span className="text-xs text-green-700">✓</span>}
-                            </button>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </div>
+                  {selectedRangeLabel()}
+                </button>
 
-                  {/* RIGHT: big month-grid calendar + start/end pills + preview + footer */}
-                  <div>
-                    {/* Top row: BS start pill, arrow, BS end pill */}
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="inline-flex items-center gap-2 px-3 py-2 border rounded-md bg-white text-sm w-40 justify-center">
-                        {tempRangeBs.start || (tempRange.start ? formatAD(tempRange.start) : "—")}
-                      </div>
-                      <div className="text-sm text-gray-400">→</div>
-                      <div className="inline-flex items-center gap-2 px-3 py-2 border rounded-md bg-white text-sm w-40 justify-center">
-                        {tempRangeBs.end || (tempRange.end ? formatAD(tempRange.end) : "—")}
-                      </div>
-                    </div>
-
-                    {/* Month header */}
-                    <div className="mb-3">
-                      <div className="flex items-center justify-between px-2">
-                        <button onClick={prevMonth} className="p-1 rounded hover:bg-gray-100">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="#374151" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                        </button>
-
-                        <div className="text-sm font-medium">
-                          {new Date(viewYear, viewMonth, 1).toLocaleString(undefined, { month: "long", year: "numeric" })}
-                        </div>
-
-                        <button onClick={nextMonth} className="p-1 rounded hover:bg-gray-100">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="#374151" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Weekday headers */}
-                    <div className="grid grid-cols-7 gap-1 text-[11px] text-gray-500 mb-2">
-                      {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
-                        <div key={d} className="text-center py-1">{d}</div>
-                      ))}
-                    </div>
-
-                    {/* Calendar grid */}
-                    <div className="grid grid-cols-7 gap-1">
-                      {weeks.map((week, wi) =>
-                        week.map((day, di) => {
-                          const isDisabled = !day;
-                          const isStart = day && tempRange.start && isSameDay(day, new Date(tempRange.start));
-                          const isEnd = day && tempRange.end && isSameDay(day, new Date(tempRange.end));
-                          const isBetween = day && tempRange.start && tempRange.end && inRange(day, tempRange.start, tempRange.end);
+                {/* FIXED position picker (two-column UI) */}
+                {showPicker && (
+                  <div
+                    ref={pickerRef}
+                    className="fixed z-50 rounded-lg shadow-lg p-4 grid"
+                    style={{
+                      gridTemplateColumns: "200px 1fr",
+                      gap: 16,
+                      top: pickerPos.top,
+                      left: pickerPos.left,
+                      width: pickerPos.width,
+                      maxWidth: "calc(100% - 24px)",
+                      background: panelBg,
+                      border: `1px solid ${panelBorder}`,
+                      color: textColor,
+                    }}
+                  >
+                    {/* LEFT: quick ranges */}
+                    <div style={{ borderRight: `1px solid ${panelBorder}`, paddingRight: 12 }}>
+                      <ul className="text-sm space-y-2">
+                        {[
+                          { key: "all", label: "All Date" },
+                          { key: "today", label: "Today" },
+                          { key: "yesterday", label: "Yesterday" },
+                          { key: "thisWeek", label: "This Week" },
+                          { key: "thisMonth", label: "This Month" },
+                          { key: "lastMonth", label: "Last Month" },
+                          { key: "thisFiscalYear", label: "This Fiscal Year" },
+                          { key: "thisYear", label: "This Year" },
+                        ].map((it) => {
+                          const isTempActive = tempQuickKey === it.key;
+                          const isAppliedActive = appliedQuick === it.key;
                           return (
-                            <button
-                              key={`${wi}-${di}`}
-                              onClick={() => handleBigCalDayClick(day)}
-                              disabled={isDisabled}
-                              className={`h-10 flex items-center justify-center text-sm rounded ${isDisabled ? "text-gray-300 cursor-default" : "cursor-pointer hover:bg-gray-100"} ${
-                                isStart || isEnd ? "bg-emerald-600 text-white" : ""
-                              } ${isBetween && !(isStart || isEnd) ? "bg-emerald-100 text-emerald-800" : ""}`}
-                            >
-                              {day ? day.getDate() : ""}
-                            </button>
+                            <li key={it.key}>
+                              <button
+                                onClick={() => applyQuickRangeToTemp(it.key)}
+                                className="w-full text-left px-3 py-2 rounded flex items-center justify-between"
+                                style={{
+                                  background: isTempActive ? (isDark ? "rgba(16,185,129,0.06)" : "#ECFDF5") : "transparent",
+                                  border: isTempActive ? `1px solid rgba(16,185,129,0.25)` : "none",
+                                  color: textColor,
+                                }}
+                              >
+                                <span>{it.label}</span>
+                                {isTempActive && <span className="ml-2"><CheckIcon /></span>}
+                                {!isTempActive && isAppliedActive && <span className="text-xs" style={{ color: "#059669" }}>✓</span>}
+                              </button>
+                            </li>
                           );
-                        })
-                      )}
+                        })}
+                      </ul>
                     </div>
 
-                    {/* Preview */}
-                    <div className="mt-4 mb-3">
-                      <div className="text-xs text-gray-500 mb-1">Preview</div>
-                      <div className="p-3 bg-gray-50 rounded text-sm">
-                        {tempRange.start && tempRange.end ? `${formatAD(tempRange.start)} → ${formatAD(tempRange.end)}` : "All Date"}
+                    {/* RIGHT: big month-grid calendar + start/end pills + preview + footer */}
+                    <div>
+                      {/* Top row: BS start pill, arrow, BS end pill */}
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="inline-flex items-center gap-2 px-3 py-2 rounded-md text-sm w-40 justify-center" style={{ background: controlBg, border: `1px solid ${controlBorder}`, color: textColor }}>
+                          {tempRangeBs.start || (tempRange.start ? formatAD(tempRange.start) : "—")}
+                        </div>
+                        <div className="text-sm" style={{ color: mutedText }}>→</div>
+                        <div className="inline-flex items-center gap-2 px-3 py-2 rounded-md text-sm w-40 justify-center" style={{ background: controlBg, border: `1px solid ${controlBorder}`, color: textColor }}>
+                          {tempRangeBs.end || (tempRange.end ? formatAD(tempRange.end) : "—")}
+                        </div>
+                      </div>
+
+                      {/* Month header */}
+                      <div className="mb-3">
+                        <div className="flex items-center justify-between px-2">
+                          <button onClick={prevMonth} className="p-1 rounded" style={{ color: mutedText }}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke={mutedText} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                          </button>
+
+                          <div className="text-sm font-medium" style={{ color: textColor }}>
+                            {new Date(viewYear, viewMonth, 1).toLocaleString(undefined, { month: "long", year: "numeric" })}
+                          </div>
+
+                          <button onClick={nextMonth} className="p-1 rounded" style={{ color: mutedText }}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke={mutedText} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Weekday headers */}
+                      <div className="grid grid-cols-7 gap-1 text-[11px] mb-2" style={{ color: mutedText }}>
+                        {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
+                          <div key={d} className="text-center py-1">{d}</div>
+                        ))}
+                      </div>
+
+                      {/* Calendar grid */}
+                      <div className="grid grid-cols-7 gap-1">
+                        {weeks.map((week, wi) =>
+                          week.map((day, di) => {
+                            const isDisabled = !day;
+                            const isStart = day && tempRange.start && isSameDay(day, new Date(tempRange.start));
+                            const isEnd = day && tempRange.end && isSameDay(day, new Date(tempRange.end));
+                            const isBetween = day && tempRange.start && tempRange.end && inRange(day, tempRange.start, tempRange.end);
+                            return (
+                              <button
+                                key={`${wi}-${di}`}
+                                onClick={() => handleBigCalDayClick(day)}
+                                disabled={isDisabled}
+                                className={`h-10 flex items-center justify-center text-sm rounded ${isDisabled ? "text-gray-400 cursor-default" : "cursor-pointer"} ${isStart || isEnd ? "bg-emerald-600 text-white" : ""} ${isBetween && !(isStart || isEnd) ? "bg-emerald-100 text-emerald-800" : ""}`}
+                                style={{
+                                  background: isStart || isEnd ? "#059669" : isBetween ? (isDark ? "rgba(16,185,129,0.06)" : "#ECFDF5") : "transparent",
+                                  color: isStart || isEnd ? "#fff" : textColor,
+                                  border: `1px solid ${isDisabled ? "transparent" : panelBorder}`,
+                                }}
+                              >
+                                {day ? day.getDate() : ""}
+                              </button>
+                            );
+                          })
+                        )}
+                      </div>
+
+                      {/* Preview */}
+                      <div className="mt-4 mb-3">
+                        <div className="text-xs" style={{ color: mutedText, marginBottom: 6 }}>Preview</div>
+                        <div className="p-3 rounded text-sm" style={{ background: isDark ? "#031322" : "#F8FAFC", color: textColor }}>
+                          {tempRange.start && tempRange.end ? `${formatAD(tempRange.start)} → ${formatAD(tempRange.end)}` : "All Date"}
+                        </div>
+                      </div>
+
+                      {/* Footer: Cancel / Apply */}
+                      <div className="flex items-center justify-end gap-2">
+                        <button onClick={cancelPicker} className="px-3 py-2 rounded border text-sm" style={{ borderColor: panelBorder, color: mutedText }}>Cancel</button>
+                        <button onClick={applyPicker} className="px-3 py-2 rounded bg-emerald-600 text-white text-sm">Apply</button>
                       </div>
                     </div>
-
-                    {/* Footer: Cancel / Apply */}
-                    <div className="flex items-center justify-end gap-2">
-                      <button onClick={cancelPicker} className="px-3 py-2 rounded border text-sm text-gray-600">Cancel</button>
-                      <button onClick={applyPicker} className="px-3 py-2 rounded bg-green-600 text-white text-sm">Apply</button>
-                    </div>
                   </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
 
-            <button onClick={() => setSearchTerm("")} className="px-3 py-2 rounded-lg border text-sm text-gray-600">
-              Clear
-            </button>
+              <button onClick={() => setSearchTerm("")} className="px-3 py-2 rounded-lg border text-sm" style={{ borderColor: controlBorder, color: mutedText }}>
+                Clear
+              </button>
+            </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-3 ml-6">
-          <button onClick={handlePrintClick} className="inline-flex items-center gap-2 px-4 py-2 rounded-md border bg-white text-gray-700 hover:shadow no-print">
+        <div className="flex items-center gap-3 ml-6" style={{ marginTop: 8 }}>
+          <button onClick={handlePrintClick} className="inline-flex items-center gap-2 px-4 py-2 rounded-md border" style={{ background: controlBg, borderColor: controlBorder, color: textColor }}>
             Print PDF
           </button>
-          <button onClick={handleDownloadExcel} className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-[#10B981] text-white no-print">
+          <button onClick={handleDownloadExcel} className="inline-flex items-center gap-2 px-4 py-2 rounded-md" style={{ background: "#10B981", color: "#fff" }}>
             Download Excel
           </button>
         </div>
-      </div>
 
-      {/* printable content preview inside app */}
-      <div ref={printRef} className="mt-6">
-        <div className="mb-6">
-          <div className="bg-gray-50 p-6 rounded-xl shadow-sm w-64">
-            <div className="text-xl font-bold">Rs. {Number(closingBalance).toLocaleString()}</div>
-            <div className="text-gray-500 text-sm">Closing Balance</div>
+        {/* printable content preview inside app */}
+        <div ref={printRef} className="mt-6">
+          <div className="mb-6">
+            <div style={{ background: panelBg, border: `1px solid ${panelBorder}`, padding: 16, borderRadius: 12, width: 260 }}>
+              <div className="text-xl font-bold" style={{ color: textColor }}>Rs. {Number(closingBalance).toLocaleString()}</div>
+              <div className="text-sm" style={{ color: mutedText }}>Closing Balance</div>
+            </div>
           </div>
-        </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full border rounded-lg overflow-hidden">
-            <thead className="bg-gray-50 text-gray-600 text-sm">
-              <tr>
-                <th className="p-3 text-left">Date</th>
-                <th className="p-3 text-left">Particular</th>
-                <th className="p-3 text-left">Notes/Remarks</th>
-                <th className="p-3 text-left">Money In</th>
-                <th className="p-3 text-left">Money Out</th>
-                <th className="p-3 text-left">Balance</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {filteredData.length === 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full" style={{ borderCollapse: "separate", borderSpacing: 0, borderRadius: 8 }}>
+              <thead style={{ background: isDark ? "#071425" : "#F8FAFC", color: mutedText }}>
                 <tr>
-                  <td colSpan={6} className="p-6 text-center text-gray-500">
-                    No transactions found
-                  </td>
+                  <th className="p-3 text-left" style={{ color: mutedText }}>Date</th>
+                  <th className="p-3 text-left" style={{ color: mutedText }}>Particular</th>
+                  <th className="p-3 text-left" style={{ color: mutedText }}>Notes/Remarks</th>
+                  <th className="p-3 text-left" style={{ color: mutedText }}>Money In</th>
+                  <th className="p-3 text-left" style={{ color: mutedText }}>Money Out</th>
+                  <th className="p-3 text-left" style={{ color: mutedText }}>Balance</th>
                 </tr>
-              ) : (
-                filteredData.map((row, i) => (
-                  <tr key={i} className="border-t text-sm">
-                    <td className="p-3">{row.date}</td>
-                    <td className="p-3">{row.type}</td>
-                    <td className="p-3">{row.remarks || "--"}</td>
-                    <td className="p-3">{row.moneyIn ? `Rs. ${Number(row.moneyIn).toLocaleString()}` : "--"}</td>
-                    <td className="p-3">{row.moneyOut ? `Rs. ${Number(row.moneyOut).toLocaleString()}` : "--"}</td>
-                    <td className="p-3">Rs. {Number(row.balance || 0).toLocaleString()}</td>
+              </thead>
+
+              <tbody>
+                {filteredData.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="p-6 text-center" style={{ color: mutedText }}>
+                      No transactions found
+                    </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  filteredData.map((row, i) => (
+                    <tr key={i} style={{ borderTop: `1px solid ${panelBorder}` }}>
+                      <td className="p-3" style={{ color: textColor }}>{row.date}</td>
+                      <td className="p-3" style={{ color: textColor }}>{row.type}</td>
+                      <td className="p-3" style={{ color: mutedText }}>{row.remarks || "--"}</td>
+                      <td className="p-3" style={{ color: textColor }}>{row.moneyIn ? `Rs. ${Number(row.moneyIn).toLocaleString()}` : "--"}</td>
+                      <td className="p-3" style={{ color: textColor }}>{row.moneyOut ? `Rs. ${Number(row.moneyOut).toLocaleString()}` : "--"}</td>
+                      <td className="p-3" style={{ color: textColor }}>Rs. {Number(row.balance || 0).toLocaleString()}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>

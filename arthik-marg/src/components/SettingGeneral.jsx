@@ -1,10 +1,11 @@
 // src/components/SettingGeneral.jsx
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useContext } from "react";
 import { Check, Calendar as CalIcon } from "lucide-react";
 import { useLocale } from "./LocaleProvider";
+import { ThemeContext } from "../context/ThemeContext";
 
 const STORAGE_KEY = "karobar:settings:general";
-const BLUE = "#172554"; // theme color requested
+const BLUE_VAR = "var(--primary-500)";
 
 function Toggle({ checked, onChange, ariaLabel }) {
   return (
@@ -18,7 +19,7 @@ function Toggle({ checked, onChange, ariaLabel }) {
       />
       <span
         className="w-12 h-6 rounded-full transition-colors"
-        style={{ backgroundColor: checked ? BLUE : "#e6e6e6" }}
+        style={{ backgroundColor: checked ? BLUE_VAR : "#e6e6e6" }}
       />
       <span
         style={{
@@ -56,12 +57,15 @@ const MONTHS_BS_SHORT = [
 
 export default function SettingGeneral() {
   const { locale, t, setLocale } = useLocale();
+  const themeCtx = useContext(ThemeContext);
 
-  // debug: remove when confirmed working
   useEffect(() => {
-    console.log("[i18n debug] locale:", locale);
-    console.log("[i18n debug] t('language'):", t("language"));
-  }, [locale, t]);
+    // sync local appearance with global theme
+    if (themeCtx && themeCtx.theme) {
+      setState((s) => ({ ...s, appearance: themeCtx.theme }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [themeCtx?.theme]);
 
   const [state, setState] = useState({
     appearance: "light",
@@ -127,22 +131,12 @@ export default function SettingGeneral() {
   }, [state]);
 
   useEffect(() => {
-    applyTheme(state.appearance);
-  }, [state.appearance]);
-
-  useEffect(() => {
     try {
       document.documentElement.lang = locale || "en";
     } catch (e) {}
   }, [locale]);
 
   const set = (patch) => setState((s) => ({ ...s, ...patch }));
-
-  function applyTheme(theme) {
-    document.body.classList.remove("theme-light", "theme-classic", "theme-dark");
-    document.body.classList.add(`theme-${theme}`);
-    document.documentElement.style.setProperty("--primary-500", BLUE);
-  }
 
   function formatADDisplay(iso) {
     const d = new Date(iso);
@@ -252,18 +246,20 @@ export default function SettingGeneral() {
   const AppearanceCard = ({ id, title, active, onClick, previewBg }) => (
     <button
       onClick={onClick}
-      className={`relative w-40 h-32 rounded-lg border p-2 flex flex-col justify-between items-start transition ${active ? "" : "hover:shadow-sm"}`}
+      className={`relative w-40 h-32 rounded-lg border p-2 flex flex-col justify-between items-start transition ${
+        active ? "" : "hover:shadow-sm"
+      }`}
       style={{
-        borderColor: active ? BLUE : "#eee",
+        borderColor: active ? "var(--primary-500)" : "rgba(0,0,0,0.06)",
+        background: "var(--surface-100)",
         boxShadow: active ? `0 0 0 3px rgba(23,37,84,0.06)` : undefined,
-        background: "white",
       }}
     >
-      <div className="w-full h-20 rounded-md" style={{ background: previewBg || "#f5f5f5", width: "100%" }} />
+      <div className="w-full h-20 rounded-md" style={{ background: previewBg || "var(--surface-200)", width: "100%" }} />
       <div className="flex items-center justify-between w-full">
-        <div className={`text-sm font-medium ${active ? "text-black" : "text-gray-800"}`}>{title}</div>
+        <div className={`text-sm font-medium ${active ? "text-text" : "text-text"}`}>{title}</div>
         {active && (
-          <span className="w-6 h-6 rounded-full flex items-center justify-center text-white" style={{ backgroundColor: BLUE }} aria-hidden>
+          <span className="w-6 h-6 rounded-full flex items-center justify-center text-white" style={{ backgroundColor: "var(--primary-500)" }} aria-hidden>
             <Check size={14} />
           </span>
         )}
@@ -272,53 +268,80 @@ export default function SettingGeneral() {
   );
 
   return (
-    <div className="min-h-0 overflow-auto p-6">
+    <div className="min-h-0 overflow-auto p-6 bg-bg text-text">
       <h1 className="text-2xl font-semibold mb-6">{t("general")}</h1>
 
       <div className="max-w-4xl space-y-6">
         {/* Appearance */}
-        <div className="bg-white border rounded-xl p-5 shadow-sm">
+        <div className="bg-surface border rounded-xl p-5 shadow-sm">
           <div className="mb-4">
-            <div className="font-medium text-gray-800">{t("appearance")}</div>
-            <div className="text-sm text-gray-500 mt-1">{t("appearance_help")}</div>
+            <div className="font-medium text-text">{t("appearance")}</div>
+            <div className="text-sm text-muted mt-1">{t("appearance_help")}</div>
           </div>
 
           <div className="flex gap-4">
-            <AppearanceCard id="light" title={t("appearance_light")} active={state.appearance === "light"} onClick={() => set({ appearance: "light" })} previewBg="linear-gradient(#ffffff,#f8fafc)" />
-            <AppearanceCard id="classic" title={t("appearance_classic")} active={state.appearance === "classic"} onClick={() => set({ appearance: "classic" })} previewBg="linear-gradient(#0f172a,#0b1220)" />
-            <AppearanceCard id="dark" title={t("appearance_dark")} active={state.appearance === "dark"} onClick={() => set({ appearance: "dark" })} previewBg="linear-gradient(#0b1220,#000)" />
+            <AppearanceCard
+              id="light"
+              title={t("appearance_light")}
+              active={state.appearance === "light"}
+              onClick={() => {
+                set({ appearance: "light" });
+                themeCtx?.setTheme && themeCtx.setTheme("light");
+              }}
+              previewBg="linear-gradient(#ffffff,#f8fafc)"
+            />
+            <AppearanceCard
+              id="classic"
+              title={t("appearance_classic")}
+              active={state.appearance === "classic"}
+              onClick={() => {
+                set({ appearance: "classic" });
+                themeCtx?.setTheme && themeCtx.setTheme("classic");
+              }}
+              previewBg="linear-gradient(#F6E9D2,#efe6cf)"
+            />
+            <AppearanceCard
+              id="dark"
+              title={t("appearance_dark")}
+              active={state.appearance === "dark"}
+              onClick={() => {
+                set({ appearance: "dark" });
+                themeCtx?.setTheme && themeCtx.setTheme("dark");
+              }}
+              previewBg="linear-gradient(#0b1220,#071024)"
+            />
           </div>
         </div>
 
         {/* Language */}
-        <div className="bg-white border rounded-xl p-5 shadow-sm flex items-center justify-between">
+        <div className="bg-surface border rounded-xl p-5 shadow-sm flex items-center justify-between">
           <div>
-            <div className="font-medium text-gray-800">{t("language")}</div>
-            <div className="text-sm text-gray-500 mt-1">{t("language_help")}</div>
+            <div className="font-medium text-text">{t("language")}</div>
+            <div className="text-sm text-muted mt-1">{t("language_help")}</div>
           </div>
           <div>
-            <select value={locale} onChange={(e) => setLocale(e.target.value)} className="border rounded px-3 py-2">
+            <select value={locale} onChange={(e) => setLocale(e.target.value)} className="border rounded px-3 py-2 bg-surface text-text">
               <option value="en">English</option>
               <option value="ne">नेपाली</option>
             </select>
           </div>
         </div>
 
-        {/* Currency */}
-        <div className="bg-white border rounded-xl p-5 shadow-sm">
-          <div className="font-medium text-gray-800">{t("currency")}</div>
-          <div className="text-sm text-gray-500 mt-1">{t("currency_help")}</div>
+        {/* ... rest follows same pattern: use bg-surface, text-text, hover:bg-surface ... */}
+        <div className="bg-surface border rounded-xl p-5 shadow-sm">
+          <div className="font-medium text-text">{t("currency")}</div>
+          <div className="text-sm text-muted mt-1">{t("currency_help")}</div>
 
           <div className="mt-4 flex items-center justify-between">
-            <select value={state.currency} onChange={(e) => set({ currency: e.target.value })} className="border rounded px-3 py-2">
+            <select value={state.currency} onChange={(e) => set({ currency: e.target.value })} className="border rounded px-3 py-2 bg-surface text-text">
               <option>Rs.</option>
               <option>$</option>
               <option>₹</option>
             </select>
 
             <div className="flex items-center gap-4">
-              <div className="text-sm text-gray-700">{t("currency_position")}</div>
-              <select value={state.currencyPosition} onChange={(e) => set({ currencyPosition: e.target.value })} className="border rounded px-3 py-2">
+              <div className="text-sm text-text">{t("currency_position")}</div>
+              <select value={state.currencyPosition} onChange={(e) => set({ currencyPosition: e.target.value })} className="border rounded px-3 py-2 bg-surface text-text">
                 <option value="start">{t("currency_position_start")}</option>
                 <option value="end">{t("currency_position_end")}</option>
               </select>
@@ -327,18 +350,18 @@ export default function SettingGeneral() {
         </div>
 
         {/* Calendar */}
-        <div className="bg-white border rounded-xl p-5 shadow-sm">
+        <div className="bg-surface border rounded-xl p-5 shadow-sm">
           <div className="flex items-start justify-between">
             <div>
-              <div className="font-medium text-gray-800">{t("calendar")}</div>
-              <div className="text-sm text-gray-500 mt-1">{t("calendar_help")}</div>
+              <div className="font-medium text-text">{t("calendar")}</div>
+              <div className="text-sm text-muted mt-1">{t("calendar_help")}</div>
             </div>
 
             <div className="flex items-center gap-2">
-              <button onClick={() => handleSetCalendar("AD")} className="px-3 py-1 rounded-md border" style={state.calendar === "AD" ? { backgroundColor: BLUE, color: "white", borderColor: BLUE } : {}}>
+              <button onClick={() => handleSetCalendar("AD")} className="px-3 py-1 rounded-md border" style={state.calendar === "AD" ? { backgroundColor: "var(--primary-500)", color: "white", borderColor: "var(--primary-500)" } : {}}>
                 AD
               </button>
-              <button onClick={() => handleSetCalendar("BS")} className="px-3 py-1 rounded-md border" style={state.calendar === "BS" ? { backgroundColor: BLUE, color: "white", borderColor: BLUE } : {}}>
+              <button onClick={() => handleSetCalendar("BS")} className="px-3 py-1 rounded-md border" style={state.calendar === "BS" ? { backgroundColor: "var(--primary-500)", color: "white", borderColor: "var(--primary-500)" } : {}}>
                 BS
               </button>
             </div>
@@ -346,17 +369,17 @@ export default function SettingGeneral() {
 
           <div className="mt-4 grid grid-cols-2 gap-4">
             <div>
-              <div className="text-sm text-gray-500">{t("dateFormat")}</div>
+              <div className="text-sm text-muted">{t("dateFormat")}</div>
               <div className="mt-2 flex items-center justify-between">
                 <div>{displayDate}</div>
-                <button onClick={handleEditDateClick} className="text-sm text-gray-500 flex items-center gap-2">
+                <button onClick={handleEditDateClick} className="text-sm text-muted flex items-center gap-2">
                   <CalIcon size={16} /> {t("change")}
                 </button>
               </div>
             </div>
 
             <div>
-              <div className="text-sm text-gray-500">{t("timeFormat")}</div>
+              <div className="text-sm text-muted">{t("timeFormat")}</div>
               <div className="mt-2 flex items-center justify-between">
                 <div>{state.timeFormat}</div>
                 <button
@@ -364,7 +387,7 @@ export default function SettingGeneral() {
                     const val = prompt(t("set_time_format_prompt"), state.timeFormat);
                     if (val) set({ timeFormat: val });
                   }}
-                  className="text-sm text-gray-500"
+                  className="text-sm text-muted"
                 >
                   {t("change")}
                 </button>
@@ -374,14 +397,14 @@ export default function SettingGeneral() {
         </div>
 
         {/* Number format */}
-        <div className="bg-white border rounded-xl p-5 shadow-sm flex items-center justify-between">
+        <div className="bg-surface border rounded-xl p-5 shadow-sm flex items-center justify-between">
           <div>
-            <div className="font-medium text-gray-800">{t("numberFormat")}</div>
-            <div className="text-sm text-gray-500 mt-1">{t("numberFormat_help")}</div>
+            <div className="font-medium text-text">{t("numberFormat")}</div>
+            <div className="text-sm text-muted mt-1">{t("numberFormat_help")}</div>
           </div>
 
           <div>
-            <select value={state.numberFormat} onChange={(e) => set({ numberFormat: e.target.value })} className="border rounded px-3 py-2">
+            <select value={state.numberFormat} onChange={(e) => set({ numberFormat: e.target.value })} className="border rounded px-3 py-2 bg-surface text-text">
               <option>10,00,000</option>
               <option>1,000,000</option>
             </select>
@@ -389,26 +412,26 @@ export default function SettingGeneral() {
         </div>
 
         {/* Privacy & App Lock */}
-        <div className="bg-white border rounded-xl p-5 shadow-sm divide-y">
+        <div className="bg-surface border rounded-xl p-5 shadow-sm divide-y">
           <div className="flex items-center justify-between p-4">
             <div>
-              <div className="font-medium text-gray-800">{t("privacyMode")}</div>
-              <div className="text-sm text-gray-500 mt-1">{t("privacyMode_help")}</div>
+              <div className="font-medium text-text">{t("privacyMode")}</div>
+              <div className="text-sm text-muted mt-1">{t("privacyMode_help")}</div>
             </div>
             <Toggle checked={state.privacyMode} onChange={(v) => set({ privacyMode: v })} ariaLabel="Privacy Mode" />
           </div>
 
           <div className="flex items-center justify-between p-4">
             <div>
-              <div className="font-medium text-gray-800">{t("appLock")}</div>
-              <div className="text-sm text-gray-500 mt-1">{t("appLock_help")}</div>
+              <div className="font-medium text-text">{t("appLock")}</div>
+              <div className="text-sm text-muted mt-1">{t("appLock_help")}</div>
             </div>
             <Toggle checked={state.appLock} onChange={(v) => set({ appLock: v })} ariaLabel="App Lock" />
           </div>
         </div>
       </div>
 
-      <div className="max-w-3xl mt-4 text-sm text-gray-500">{t("demo_saving_notice")}</div>
+      <div className="max-w-3xl mt-4 text-sm text-muted">{t("demo_saving_notice")}</div>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 // src/i18n/LocaleProvider.jsx
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
-import translations from "./translations";
+import translations from "./translations.jsx";
 
 const STORAGE_KEY = "karobar:locale";
 

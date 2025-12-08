@@ -122,7 +122,7 @@ export default function App() {
               element={<ManageAccountsPage sidebarOpen={sidebarOpen} />}
             />
 
-            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/settings/*" element={<SettingsPage />} />
           </Routes>
         </main>
       </div>

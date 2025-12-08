@@ -1,7 +1,15 @@
 // src/components/ReportsGallery.jsx
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useContext } from "react";
 import { Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { ThemeContext } from "../context/ThemeContext";
+
+/**
+ * Theme-aware ReportsGallery
+ * - Reads CSS variables from ThemeProvider via ThemeContext
+ * - Falls back to sensible defaults when variables are absent
+ * - Uses theme variables for page background, card background, borders and text
+ */
 
 const SECTIONS = [
   {
@@ -58,8 +66,12 @@ const SECTIONS = [
 ];
 
 export default function ReportsGallery() {
-  const [active, setActive] = useState("All Reports");
+  const { theme } = useContext(ThemeContext || {});
   const navigate = useNavigate();
+
+  // UI state
+  const [active, setActive] = useState("All Reports");
+  const [query, setQuery] = useState("");
 
   const tabs = [
     "All Reports",
@@ -70,7 +82,40 @@ export default function ReportsGallery() {
     "Business Status",
   ];
 
-  // Handle card click + route mapping
+  // derive theme-driven styles from CSS vars (with fallbacks)
+  const pageBg = "var(--surface-200, #f3f4f6)"; // light grey page surface
+  const pageText = "var(--text-default, #0f172a)";
+  const cardBg = "var(--bg-default, #ffffff)";
+  const cardBorder = "var(--border, rgba(0,0,0,0.06))";
+  const mutedText = "var(--muted, rgba(0,0,0,0.6))";
+  const primary = "var(--primary-500, #16a34a)"; // used for active buttons
+  const primaryTextOn = "var(--text-on-primary, #ffffff)";
+
+  const containerStyle = {
+    background: pageBg,
+    color: pageText,
+    minHeight: "calc(100vh - 4rem)",
+    padding: "24px",
+  };
+
+  const innerCardStyle = {
+    background: cardBg,
+    border: `1px solid ${cardBorder}`,
+    borderRadius: 12,
+    padding: 20,
+  };
+
+  const tabActiveStyle = {
+    background: primary,
+    color: primaryTextOn,
+  };
+  const tabInactiveStyle = {
+    background: "transparent",
+    color: pageText,
+    border: `1px solid ${cardBorder}`,
+  };
+
+  // navigation helper: slugify title -> route
   const handleClick = (title) => {
     const route = title
       .toLowerCase()
@@ -81,7 +126,7 @@ export default function ReportsGallery() {
     navigate(`/reports/${route}`);
   };
 
-  // Filter sections to render according to active tab
+  // Filter sections by active tab
   const sectionsToShow = useMemo(() => {
     if (active === "All Reports") return SECTIONS;
     if (active === "Transactions") return SECTIONS.filter((s) => s.id === "transaction");
@@ -92,65 +137,128 @@ export default function ReportsGallery() {
     return SECTIONS;
   }, [active]);
 
+  // Filtered and searched function for display
+  const matchesQuery = (title, desc) => {
+    if (!query) return true;
+    const q = query.trim().toLowerCase();
+    return title.toLowerCase().includes(q) || desc.toLowerCase().includes(q);
+  };
+
   return (
-    <div className="px-8 pt-6 pb-16 w-full">
+    <div style={containerStyle} className="w-full">
+      <div style={{ maxWidth: 1200, margin: "0 auto" }}>
 
-      {/* Heading */}
-      <h1 className="text-2xl font-semibold text-gray-800 mb-6">
-        Browse Various Reports
-      </h1>
+        <h1 style={{ fontSize: 20, fontWeight: 700, marginBottom: 12, color: pageText }}>
+          Browse Various Reports
+        </h1>
 
-      {/* Tabs + Search */}
-      <div className="flex items-center justify-between w-full mb-10">
-        <div className="flex gap-3 flex-wrap">
-          {tabs.map((t) => (
-            <button
-              key={t}
-              onClick={() => setActive(t)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium border transition ${
-                active === t
-                  ? "bg-emerald-500 text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
-            >
-              {t}
-            </button>
-          ))}
+        {/* Tabs + Search */}
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 20, alignItems: "center" }}>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {tabs.map((t) => {
+              const isActive = active === t;
+              return (
+                <button
+                  key={t}
+                  onClick={() => setActive(t)}
+                  aria-pressed={isActive}
+                  style={{
+                    padding: "8px 12px",
+                    borderRadius: 8,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    ...(isActive ? tabActiveStyle : tabInactiveStyle),
+                  }}
+                >
+                  {t}
+                </button>
+              );
+            })}
+          </div>
 
-        </div>
-
-        <div className="relative w-64">
-          <Search
-            size={18}
-            className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-500"
-          />
-          <input
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none"
-            placeholder="Search reports..."
-          />
-        </div>
-      </div>
-
-      {/* Render filtered sections (keeps exact same UI) */}
-      {sectionsToShow.map((section) => (
-        <div key={section.id} className="mb-12">
-          <h2 className="text-lg font-semibold text-gray-700 mb-4">{section.title}</h2>
-
-          <div className="grid grid-cols-4 gap-6">
-            {section.items.map(([title, desc]) => (
-              <div
-                key={title}
-                onClick={() => handleClick(title)}
-                className="p-5 border border-gray-200 rounded-2xl bg-white hover:shadow-md cursor-pointer transition"
-              >
-                <h3 className="text-lg font-semibold text-gray-800 mb-1">{title}</h3>
-                <p className="text-sm text-gray-600">{desc}</p>
-              </div>
-            ))}
+          <div style={{ width: 300, position: "relative" }}>
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: mutedText }} />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search reports..."
+              aria-label="Search reports"
+              style={{
+                width: "100%",
+                padding: "10px 12px 10px 36px",
+                borderRadius: 8,
+                border: `1px solid ${cardBorder}`,
+                background: cardBg,
+                color: pageText,
+                fontSize: 13,
+                outline: "none",
+              }}
+            />
           </div>
         </div>
-      ))}
 
+        {/* Sections */}
+        <div style={{ ...innerCardStyle }}>
+          {sectionsToShow.map((section) => (
+            <div key={section.id} style={{ marginBottom: 28 }}>
+              <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12, color: pageText }}>
+                {section.title}
+              </h2>
+
+              <div
+                className="reports-grid"
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
+                  gap: 16,
+                }}
+              >
+                {section.items
+                  .filter(([title, desc]) => matchesQuery(title, desc))
+                  .map(([title, desc]) => (
+                    <article
+                      key={title}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => { if (e.key === "Enter") handleClick(title); }}
+                      onClick={() => handleClick(title)}
+                      className="report-card"
+                      style={{
+                        padding: 16,
+                        borderRadius: 12,
+                        background: cardBg,
+                        border: `1px solid ${cardBorder}`,
+                        cursor: "pointer",
+                        transition: "box-shadow .15s ease, transform .08s ease",
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "space-between",
+                        minHeight: 100,
+                      }}
+                    >
+                      <div>
+                        <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 8, color: pageText }}>{title}</h3>
+                        <p style={{ fontSize: 13, color: mutedText, margin: 0 }}>{desc}</p>
+                      </div>
+
+                      <div style={{ marginTop: 12, display: "flex", justifyContent: "flex-end" }}>
+                        <span style={{ fontSize: 12, color: mutedText }}>Open</span>
+                      </div>
+                    </article>
+                  ))}
+              </div>
+            </div>
+          ))}
+
+          {/* If no section items matched search */}
+          {sectionsToShow.every(section => section.items.filter(([t,d]) => matchesQuery(t,d)).length === 0) && (
+            <div style={{ padding: 20, textAlign: "center", color: mutedText }}>
+              No reports found for "{query}"
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

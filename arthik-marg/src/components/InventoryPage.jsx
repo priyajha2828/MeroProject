@@ -1,117 +1,286 @@
-import React, { useState } from "react";
-import { Package, Plus, FileText, X } from "lucide-react";
-import { ImportItemsPage } from "./ImportItemsPage";
+// src/components/OtherIncomePage.jsx
+import React, { useEffect, useRef, useState } from "react";
+import { Plus, X, Calendar, Camera } from "lucide-react";
 
-const CUSTOM_BLUE = "bg-[#172554]";
-const CUSTOM_BLUE_HOVER_BG = "hover:bg-[#111A31]";
+/* ---------------------------
+   CategorySelect (no search)
+   - clicking anywhere toggles
+   - arrow is clickable and toggles without extra behavior
+   - no search input when open (just list)
+   - closes on outside click
+   --------------------------- */
+function CategorySelect({ value, onChange, categories = [] }) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef(null);
 
-export function InventoryPage({ sidebarOpen }) {
-  const [showImportItems, setShowImportItems] = useState(false);
-  const [showAddItem, setShowAddItem] = useState(false);
+  useEffect(() => {
+    function onDocClick(e) {
+      if (rootRef.current && !rootRef.current.contains(e.target)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, []);
 
-  // form state for Add Item modal
-  const [form, setForm] = useState({
-    name: "",
-    category: "General",
-    itemType: "Product",
-    openingStock: "",
-    unit: "",
-    salesPrice: "",
-    purchasePrice: "",
-    lowStockAlert: false,
-  });
+  return (
+    <div className="relative" ref={rootRef}>
+      <div
+        onClick={() => setOpen((s) => !s)}
+        className="w-full px-3 py-3 border rounded-md flex items-center justify-between cursor-pointer"
+        style={{ borderColor: "rgba(34,197,94,0.25)", background: "#fff" }}
+      >
+        <div style={{ minWidth: 0 }}>
+          {value ? <div className="truncate text-gray-800">{value}</div> : <div className="text-gray-400">Search for category</div>}
+        </div>
 
+        <div
+          onClick={(e) => {
+            // arrow toggles too, stop propagation only to avoid double events
+            e.stopPropagation();
+            setOpen((s) => !s);
+          }}
+          className="text-gray-400 ml-2 select-none"
+          aria-hidden="true"
+        >
+          ▾
+        </div>
+      </div>
+
+      {open && (
+        <div
+          className="absolute z-40 mt-2 w-full bg-white border rounded-md"
+          style={{
+            borderColor: "rgba(0,0,0,0.08)",
+            boxShadow: "0 6px 18px rgba(2,6,23,0.06)",
+          }}
+        >
+          <div className="max-h-52 overflow-auto">
+            {categories.map((cat) => (
+              <div
+                key={cat}
+                onClick={() => {
+                  onChange(cat);
+                  setOpen(false);
+                }}
+                className="px-4 py-3 cursor-pointer hover:bg-gray-100 text-gray-800"
+              >
+                {cat}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ---------------------------
+   OtherIncomePage
+   - modal sized like your screenshot (720px, 80vh)
+   - sticky footer, internal scroll
+   - category uses CategorySelect above
+   --------------------------- */
+export function OtherIncomePage({ sidebarOpen = true }) {
   const expandedWidth = "24rem";
   const COLLAPSED_MARGIN = "4rem";
   const sidebarOffset = sidebarOpen ? expandedWidth : COLLAPSED_MARGIN;
 
-  function handleChange(e) {
-    const { name, value, type, checked } = e.target;
-    setForm(prev => ({ ...prev, [name]: type === "checkbox" ? checked : value }));
+  const [showAddIncome, setShowAddIncome] = useState(false);
+  const [incomes, setIncomes] = useState([]);
+
+  // form state
+  const [incomeNo, setIncomeNo] = useState(1);
+  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [category, setCategory] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("Cash");
+  const [remarks, setRemarks] = useState("");
+  const [attachments, setAttachments] = useState([]);
+  const [items, setItems] = useState([]);
+
+  const categories = [
+    "Grants & Funding",
+    "Sponsorships",
+    "Investments",
+    "Commission",
+    "Interest",
+    "Rent",
+    "Refund",
+    "Other",
+  ];
+
+  // computed total
+  const total = items.reduce((sum, it) => sum + (parseFloat(it.amount || 0) || 0), 0);
+
+  useEffect(() => {
+    // placeholder: could fetch next income number from backend
+    setIncomeNo((n) => (n || 1));
+  }, []);
+
+  function addItem() {
+    setItems((prev) => [...prev, { desc: "", qty: "", rate: "", amount: "" }]);
   }
 
-  function handleSubmit(e) {
-    e.preventDefault();
-    // TODO: replace with real save logic
-    console.log("Saving item", form);
-    setShowAddItem(false);
-    // reset if you want:
-    // setForm({ name: "", category: "General", itemType: "Product", openingStock: "", unit: "", salesPrice: "", purchasePrice: "", lowStockAlert: false });
+  function updateItem(idx, field, value) {
+    setItems((prev) => {
+      const next = [...prev];
+      next[idx] = { ...next[idx], [field]: value };
+
+      const qty = parseFloat(next[idx].qty) || 0;
+      const rate = parseFloat(next[idx].rate) || 0;
+      next[idx].amount = qty && rate ? (qty * rate).toFixed(2) : next[idx].amount || "";
+      return next;
+    });
+  }
+
+  function removeItem(idx) {
+    setItems((prev) => prev.filter((_, i) => i !== idx));
+  }
+
+  function handleAttach(e) {
+    const files = Array.from(e.target.files || []);
+    if (files.length) setAttachments((prev) => [...prev, ...files]);
+    e.target.value = null;
+  }
+
+  function removeAttachment(i) {
+    setAttachments((prev) => prev.filter((_, idx) => idx !== i));
+  }
+
+  function handleSave(e) {
+    e?.preventDefault?.();
+
+    if (!category && items.length === 0) {
+      alert("Please select a category or add at least one income item.");
+      return;
+    }
+
+    const payload = {
+      incomeNo,
+      date,
+      category,
+      paymentMethod,
+      remarks,
+      items,
+      total: parseFloat(total.toFixed ? total.toFixed(2) : total),
+      attachments,
+    };
+
+    console.log("Saving income", payload);
+
+    // demo local append
+    setIncomes((prev) => [{ id: Date.now(), ...payload }, ...prev]);
+
+    // reset & close
+    setItems([]);
+    setCategory("");
+    setPaymentMethod("Cash");
+    setRemarks("");
+    setAttachments([]);
+    setShowAddIncome(false);
+    setIncomeNo((n) => n + 1);
   }
 
   return (
     <>
-      {showImportItems && <ImportItemsPage sidebarOpen={sidebarOpen} />}
-
-      {!showImportItems && (
-        <div
-          className="fixed top-16 right-0 bottom-0 bg-white overflow-auto flex flex-col items-center justify-center"
-          style={{
-            left: sidebarOffset,
-            width: `calc(100% - ${sidebarOffset})`,
-          }}
-        >
-          <div className="max-w-lg w-full flex flex-col items-center text-center space-y-6">
-            {/* Illustration */}
-            <div className="relative flex flex-col items-center mb-4">
-              <div className="w-32 h-32 bg-blue-50 border-2 border-blue-100 rounded-xl flex items-center justify-center rotate-3">
-                <Package size={64} className="text-blue-200" />
-              </div>
-
-              <div className="absolute -left-4 top-10 w-4 h-4 bg-yellow-200 rounded-full opacity-50"></div>
-              <div className="absolute -right-2 bottom-4 w-6 h-6 bg-blue-100 rounded-full opacity-50"></div>
-            </div>
-
-            <h2 className="text-2xl font-bold text-gray-800">
-              Let's add your First Item
-            </h2>
-
-            <p className="text-gray-500 text-base max-w-md">
-              Click on the add new item button and start managing your items.
+      {/* page main: centered empty state or incomes list */}
+      <div
+        className="fixed top-16 right-0 bottom-0 overflow-auto flex flex-col items-center justify-center"
+        style={{
+          left: sidebarOffset,
+          width: `calc(100% - ${sidebarOffset})`,
+          background: "#fff",
+        }}
+      >
+        {incomes.length === 0 ? (
+          <div className="flex flex-col items-center text-center px-4">
+            <img
+              src="https://cdn-icons-png.flaticon.com/512/2921/2921222.png"
+              alt=""
+              className="w-40 h-40 opacity-90 mb-6"
+            />
+            <h2 className="text-2xl font-semibold text-gray-800 mb-2">Create Your First Income</h2>
+            <p className="text-gray-500 max-w-sm mb-6">
+              Click on the create income button and start managing your incomes
             </p>
 
-            <div className="flex items-center gap-4 pt-2">
-              {/* Add New Item Button */}
+            <button
+              onClick={() => setShowAddIncome(true)}
+              className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium transition"
+            >
+              <Plus size={16} />
+              Add New Income
+            </button>
+          </div>
+        ) : (
+          <div className="p-6 w-full max-w-4xl">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold">Other Income</h2>
               <button
-                onClick={() => setShowAddItem(true)}
-                className={`flex items-center gap-2 px-6 py-3 ${CUSTOM_BLUE} text-white rounded-lg font-semibold ${CUSTOM_BLUE_HOVER_BG} shadow-sm`}
+                onClick={() => setShowAddIncome(true)}
+                className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg"
               >
-                <Plus size={20} />
-                Add New Item
-              </button>
-
-              {/* Import Items Button */}
-              <button
-                onClick={() => setShowImportItems(true)}
-                className="flex items-center gap-2 px-6 py-3 bg-white border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
-              >
-                <FileText size={20} />
-                Import Items
+                <Plus size={16} />
+                Add Income
               </button>
             </div>
-          </div>
-        </div>
-      )}
 
-      {/* Add Item Modal */}
-      {showAddItem && (
+            <div className="space-y-3">
+              {incomes.map((inc) => (
+                <div key={inc.id} className="border rounded-md p-3" style={{ borderColor: "rgba(0,0,0,0.04)" }}>
+                  <div className="flex justify-between">
+                    <div>
+                      <div className="font-medium">Rs. {inc.total}</div>
+                      <div className="text-sm text-gray-500">{inc.category || "-"}</div>
+                    </div>
+                    <div className="text-sm text-gray-500">{inc.date}</div>
+                  </div>
+                  {inc.remarks && <div className="mt-2 text-sm text-gray-600">{inc.remarks}</div>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Add Income Modal */}
+      {showAddIncome && (
         <div
           className="fixed inset-0 z-50 flex items-start justify-center overflow-auto"
-          style={{ paddingTop: "4rem", left: sidebarOffset, width: `calc(100% - ${sidebarOffset})` }}
+          style={{ paddingTop: "2.5rem", paddingLeft: sidebarOffset }}
         >
           {/* Backdrop */}
           <div
-            className="absolute inset-0 bg-black/40"
-            onClick={() => setShowAddItem(false)}
+            className="absolute inset-0"
+            onClick={() => setShowAddIncome(false)}
+            style={{ background: "rgba(0,0,0,0.35)" }}
             aria-hidden="true"
           />
 
-          {/* Modal card */}
-          <div className="relative z-10 w-full max-w-3xl bg-white rounded-lg shadow-lg p-6 mx-4">
-            <div className="flex items-start justify-between mb-4">
-              <h3 className="text-xl font-semibold text-gray-800">Add New Item</h3>
+          {/* Modal panel (sized like screenshot) */}
+          <div
+            className="relative z-10 bg-white rounded-md mx-4"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Add Income"
+            style={{
+              width: "720px",
+              maxWidth: "calc(100% - 48px)",
+              maxHeight: "80vh",
+              overflow: "hidden",
+              border: "1px solid rgba(0,0,0,0.06)",
+              borderRadius: 10,
+              boxShadow: "0 8px 40px rgba(2,6,23,0.08)",
+            }}
+          >
+            {/* Header */}
+            <div
+              className="flex items-center justify-between px-6 py-4"
+              style={{ borderBottom: "1px solid rgba(0,0,0,0.04)" }}
+            >
+              <h3 className="text-lg font-semibold">Add Income</h3>
               <button
-                onClick={() => setShowAddItem(false)}
+                onClick={() => setShowAddIncome(false)}
                 className="p-2 rounded hover:bg-gray-100"
                 aria-label="Close"
               >
@@ -119,165 +288,210 @@ export function InventoryPage({ sidebarOpen }) {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Item name */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Item Name</label>
-                <input
-                  name="name"
-                  value={form.name}
-                  onChange={handleChange}
-                  placeholder="eg. Noodles"
-                  className="w-full rounded-lg border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-300"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                {/* Category */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Item Category</label>
-                  <select
-                    name="category"
-                    value={form.category}
-                    onChange={handleChange}
-                    className="w-full rounded-lg border border-gray-200 px-4 py-3"
-                  >
-                    <option>General</option>
-                    <option>Food</option>
-                    <option>Electronics</option>
-                    {/* add more */}
-                  </select>
-                </div>
-
-                {/* Item Type */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Item Type</label>
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setForm(prev => ({ ...prev, itemType: "Product" }))}
-                      className={`px-3 py-2 rounded-lg border ${form.itemType === "Product" ? "bg-[#174552]  text-white" : "bg-white border-gray-200 text-gray-700"}`}
-                    >
-                      Product
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setForm(prev => ({ ...prev, itemType: "Service" }))}
-                      className={`px-3 py-2 rounded-lg border ${form.itemType === "Service" ? "bg-[#174552]  text-white" : "bg-white border-gray-200 text-gray-700"}`}
-                    >
-                      Service
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Tabs-like area: Stock Details */}
-              <div className="border-t pt-4">
+            {/* Scrollable form body */}
+            <div className="px-6 py-4 overflow-y-auto" style={{ maxHeight: "calc(80vh - 140px)" }}>
+              <form onSubmit={handleSave} className="space-y-4">
+                {/* Income No & Date */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Opening Stock</label>
-                    <input
-                      name="openingStock"
-                      value={form.openingStock}
-                      onChange={handleChange}
-                      className="w-full rounded-lg border border-gray-200 px-4 py-3"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Measuring Unit</label>
-                    <input
-                      name="unit"
-                      value={form.unit}
-                      onChange={handleChange}
-                      placeholder="Select Units"
-                      className="w-full rounded-lg border border-gray-200 px-4 py-3"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4 mt-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Sales Price</label>
-                    <div className="flex">
-                      <span className="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-gray-200 bg-gray-50">Rs.</span>
+                    <label className="text-sm font-medium text-gray-700">Income No.</label>
+                    <div className="mt-2 flex items-center gap-3">
                       <input
-                        name="salesPrice"
-                        value={form.salesPrice}
-                        onChange={handleChange}
-                        className="w-full rounded-r-lg border border-gray-200 px-4 py-3"
+                        value={incomeNo}
+                        onChange={(e) => setIncomeNo(e.target.value)}
+                        className="w-full rounded-md px-3 py-2 border"
+                        style={{ borderColor: "rgba(0,0,0,0.06)" }}
                       />
+                      <span className="text-sm text-green-600 font-medium">Manual</span>
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Purchase Price</label>
-                    <div className="flex">
-                      <span className="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-gray-200 bg-gray-50">Rs.</span>
+                    <label className="text-sm font-medium text-gray-700">Date</label>
+                    <div className="mt-2 relative">
                       <input
-                        name="purchasePrice"
-                        value={form.purchasePrice}
-                        onChange={handleChange}
-                        className="w-full rounded-r-lg border border-gray-200 px-4 py-3"
+                        type="date"
+                        value={date}
+                        onChange={(e) => setDate(e.target.value)}
+                        className="w-full rounded-md px-3 py-2 border pr-10"
+                        style={{ borderColor: "rgba(0,0,0,0.06)" }}
                       />
+                      <div className="absolute right-3 top-2.5 text-gray-500">
+                        <Calendar size={18} />
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="mt-4 border rounded-lg p-3 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="text-green-600">
-                      {/* icon placeholder */}
-                      <Package size={18} />
+                {/* Category */}
+                <div>
+                  <label className="text-sm font-medium text-gray-700">Income Category</label>
+                  <div className="mt-2">
+                    <CategorySelect value={category} onChange={setCategory} categories={categories} />
+                  </div>
+                </div>
+
+                {/* Add Income Item */}
+                <div>
+                  <button type="button" onClick={addItem} className="flex items-center gap-2 text-green-600 font-medium">
+                    <Plus size={14} /> Add Income Item
+                  </button>
+                </div>
+
+                {/* Items list */}
+                {items.map((it, idx) => (
+                  <div key={idx} className="bg-white border rounded-md p-3 mt-2" style={{ borderColor: "rgba(0,0,0,0.04)" }}>
+                    <div className="flex justify-between items-start gap-3">
+                      <div className="flex-1">
+                        <label className="text-sm text-gray-600">Description</label>
+                        <input
+                          value={it.desc}
+                          onChange={(e) => updateItem(idx, "desc", e.target.value)}
+                          className="w-full mt-1 rounded-md px-3 py-2 border"
+                          style={{ borderColor: "rgba(0,0,0,0.06)" }}
+                        />
+                      </div>
+
+                      <div className="w-24">
+                        <label className="text-sm text-gray-600">Qty</label>
+                        <input
+                          value={it.qty}
+                          onChange={(e) => updateItem(idx, "qty", e.target.value)}
+                          className="w-full mt-1 rounded-md px-3 py-2 border"
+                          style={{ borderColor: "rgba(0,0,0,0.06)" }}
+                          type="number"
+                          min="0"
+                        />
+                      </div>
+
+                      <div className="w-28">
+                        <label className="text-sm text-gray-600">Rate</label>
+                        <input
+                          value={it.rate}
+                          onChange={(e) => updateItem(idx, "rate", e.target.value)}
+                          className="w-full mt-1 rounded-md px-3 py-2 border"
+                          style={{ borderColor: "rgba(0,0,0,0.06)" }}
+                          type="number"
+                          min="0"
+                          step="0.01"
+                        />
+                      </div>
+
+                      <div className="w-28">
+                        <label className="text-sm text-gray-600">Amount</label>
+                        <input
+                          value={it.amount}
+                          readOnly
+                          className="w-full mt-1 rounded-md px-3 py-2 border bg-gray-50"
+                          style={{ borderColor: "rgba(0,0,0,0.06)" }}
+                        />
+                      </div>
+
+                      <div className="pt-6">
+                        <button type="button" onClick={() => removeItem(idx)} className="text-red-500 hover:text-red-600 p-1">
+                          <X size={16} />
+                        </button>
+                      </div>
                     </div>
-                    <div>
-                      <div className="font-medium text-gray-800">Low Stock Alert</div>
-                      <div className="text-sm text-gray-500">Notify when stock is low</div>
+                  </div>
+                ))}
+
+                {/* Divider */}
+                <div className="border-t" style={{ borderColor: "rgba(0,0,0,0.06)" }} />
+
+                {/* Total & Payment method */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Total Amount</label>
+                    <div className="mt-2 flex">
+                      <span className="inline-flex items-center px-3 rounded-l-md border border-r-0" style={{ background: "#f8fafc", borderColor: "rgba(0,0,0,0.06)" }}>
+                        Rs.
+                      </span>
+                      <input
+                        value={total ? total.toFixed(2) : ""}
+                        readOnly
+                        className="w-full rounded-r-md px-3 py-2 border bg-gray-50"
+                        style={{ borderColor: "rgba(0,0,0,0.06)" }}
+                      />
                     </div>
                   </div>
 
                   <div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        className="sr-only"
-                        name="lowStockAlert"
-                        checked={form.lowStockAlert}
-                        onChange={handleChange}
-                      />
-                      <span className="w-11 h-6 bg-gray-200 rounded-full relative after:absolute after:top-0.5 after:left-0.5 after:bg-white after:w-5 after:h-5 after:rounded-full after:transition-all"
-                        // small visual only — add class toggling if you want the switch to move
-                      />
+                    <label className="text-sm font-medium text-gray-700">Payment Method</label>
+                    <select
+                      value={paymentMethod}
+                      onChange={(e) => setPaymentMethod(e.target.value)}
+                      className="mt-2 w-full rounded-md px-3 py-2 border"
+                      style={{ borderColor: "rgba(0,0,0,0.06)" }}
+                    >
+                      <option>Cash</option>
+                      <option>Bank</option>
+                      <option>Mobile Wallet</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Remarks */}
+                <div>
+                  <label className="text-sm font-medium text-gray-700">Remarks</label>
+                  <textarea
+                    value={remarks}
+                    onChange={(e) => setRemarks(e.target.value)}
+                    rows={3}
+                    className="w-full mt-2 rounded-md px-3 py-2 border"
+                    style={{ borderColor: "rgba(0,0,0,0.06)", background: "#fff" }}
+                  />
+                </div>
+
+                {/* Attachments */}
+                <div>
+                  <label className="text-sm font-medium text-gray-700">Attachments</label>
+                  <div className="mt-2 flex items-center gap-3">
+                    <label className="flex items-center gap-2 px-3 py-2 border rounded-md cursor-pointer" style={{ borderColor: "rgba(0,0,0,0.06)" }}>
+                      <Camera size={16} />
+                      <span className="text-sm">Upload</span>
+                      <input type="file" onChange={handleAttach} className="hidden" multiple />
                     </label>
+
+                    <div className="flex flex-wrap gap-2">
+                      {attachments.map((f, i) => (
+                        <div key={i} className="px-3 py-1 border rounded-md text-sm flex items-center gap-2" style={{ borderColor: "rgba(0,0,0,0.06)" }}>
+                          <span className="truncate max-w-xs">{f.name}</span>
+                          <button type="button" onClick={() => removeAttachment(i)} className="text-gray-500 hover:text-red-500">
+                            <X size={14} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
+              </form>
+            </div>
 
-              {/* Actions */}
-              <div className="flex items-center justify-end gap-3 pt-2">
+            {/* Sticky footer (always visible) */}
+            <div style={{ borderTop: "1px solid rgba(0,0,0,0.04)" }}>
+              <div className="px-6 py-4 flex justify-end gap-3">
                 <button
                   type="button"
-                  onClick={() => {
-                    // maybe save & clear for new
-                    console.log("Save & New", form);
-                    setForm({ name: "", category: "General", itemType: "Product", openingStock: "", unit: "", salesPrice: "", purchasePrice: "", lowStockAlert: false });
-                  }}
-                  className="px-4 py-2 rounded-lg border bg-white text-gray-700"
+                  onClick={() => setShowAddIncome(false)}
+                  className="px-4 py-2 rounded-md border"
                 >
-                  Save & New
+                  Cancel
                 </button>
-
                 <button
-                  type="submit"
-                  className="px-4 py-2 rounded-lg bg-[#174552] text-white"
+                  type="button"
+                  onClick={handleSave}
+                  className="px-6 py-2 rounded-md bg-green-600 text-white"
                 >
-                  Add Item
+                  Save Income
                 </button>
               </div>
-            </form>
+            </div>
           </div>
         </div>
       )}
     </>
   );
 }
+
+export default OtherIncomePage;

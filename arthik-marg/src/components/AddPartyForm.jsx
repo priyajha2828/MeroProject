@@ -1,6 +1,6 @@
 // src/components/AddPartyForm.jsx
-import React, { useState } from 'react';
-import { User, Upload, X } from 'lucide-react';
+import React, { useState } from "react";
+import { User, Upload, X } from "lucide-react";
 
 // Custom Colors
 const CUSTOM_BLUE = "bg-[#172554]";
@@ -8,25 +8,24 @@ const CUSTOM_BLUE_TEXT = "text-[#172554]";
 const CUSTOM_BLUE_HOVER_BG = "hover:bg-[#111A31]";
 const GRAY_HOVER_BG = "hover:bg-gray-100";
 
-export function AddPartyForm({ onClose, sidebarOpen }) {
-  const today = new Date().toISOString().split('T')[0];
+export default function AddPartyForm({ onClose } = {}) {
+  const today = new Date().toISOString().split("T")[0];
 
   const [formData, setFormData] = useState({
-    fullName: '',
-    phoneNumber: '',
-    openingBalance: '0',
+    fullName: "",
+    phoneNumber: "",
+    openingBalance: "0",
     asOfDate: today,
   });
 
-  const [partyType, setPartyType] = useState('Customer');
-  const [activeTab, setActiveTab] = useState('Credit Info');
-  const [transactionType, setTransactionType] = useState('To Receive');
+  const [partyType, setPartyType] = useState("Customer");
+  const [activeTab, setActiveTab] = useState("Credit Info");
+  const [transactionType, setTransactionType] = useState("To Receive");
   const [photoPreview, setPhotoPreview] = useState(null);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    // FIX: correctly spread previous state
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handlePhotoUpload = (e) => {
@@ -39,8 +38,8 @@ export function AddPartyForm({ onClose, sidebarOpen }) {
   };
 
   const handleSave = () => {
-    // TODO: hook into API or parent state
-    console.log('Saving party', { formData, partyType, transactionType, photo: !!photoPreview });
+    // replace with your API or state logic
+    console.log("Saving Party:", { formData, partyType, transactionType, photo: !!photoPreview });
     if (onClose) onClose();
   };
 
@@ -48,10 +47,11 @@ export function AddPartyForm({ onClose, sidebarOpen }) {
     if (onClose) onClose();
   };
 
-  const InputField = ({ label, name, placeholder, type = 'text', required = false }) => (
+  const InputField = ({ label, name, placeholder, type = "text", required = false }) => (
     <div className="flex flex-col w-full">
       <label className="text-sm font-medium text-gray-700 mb-1">
-        {label}{required && <span className="text-red-500">*</span>}
+        {label}
+        {required && <span className="text-red-500">*</span>}
       </label>
       <input
         type={type}
@@ -67,6 +67,7 @@ export function AddPartyForm({ onClose, sidebarOpen }) {
 
   const TabButton = ({ name }) => (
     <button
+      type="button"
       onClick={() => setActiveTab(name)}
       className={`px-4 py-2 text-sm font-medium transition-colors duration-200 ${
         activeTab === name ? `${CUSTOM_BLUE_TEXT} border-b-2 border-[#172554]` : `text-gray-500 ${GRAY_HOVER_BG}`
@@ -78,46 +79,33 @@ export function AddPartyForm({ onClose, sidebarOpen }) {
 
   const TransactionButton = ({ type, label }) => (
     <button
+      type="button"
       onClick={() => setTransactionType(type)}
       className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors duration-200 border ${
-        transactionType === type ? `${CUSTOM_BLUE} text-white border-transparent shadow-md` : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+        transactionType === type ? `${CUSTOM_BLUE} text-white border-transparent shadow-md` : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
       }`}
     >
       {label}
     </button>
   );
 
-  // Calculate offset if used as a modal overlay inside PartiesPage
-  const expandedWidth = '24rem';
-  const COLLAPSED_MARGIN = '4rem';
-  const sidebarOffset = sidebarOpen ? expandedWidth : COLLAPSED_MARGIN;
-
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-start justify-center p-6 bg-black/40 overflow-auto"
-      aria-modal="true"
-      role="dialog"
-    >
-      <div
-        className="relative bg-white rounded-lg shadow-lg w-full max-w-3xl mt-10"
-        style={{ marginLeft: sidebarOffset }}
-      >
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+      <div className="bg-white rounded-lg shadow-2xl w-full max-w-2xl transform transition-all">
+        {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <h3 className="text-lg font-semibold">Add New Party</h3>
-          <button onClick={handleClose} className="text-gray-600 hover:text-black">
-            <X size={18} />
+          <h2 className="text-xl font-bold text-gray-800">Add New Party</h2>
+          <button onClick={handleClose} className="text-gray-400 hover:text-gray-700" aria-label="Close">
+            <X size={22} />
           </button>
         </div>
 
+        {/* Body */}
         <div className="p-6">
           <div className="flex gap-6 mb-6">
             <div className="flex flex-col items-center">
               <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center mb-2 overflow-hidden border border-gray-400">
-                {photoPreview ? (
-                  <img src={photoPreview} alt="Party" className="w-full h-full object-cover" />
-                ) : (
-                  <User size={48} className="text-gray-500" />
-                )}
+                {photoPreview ? <img src={photoPreview} alt="Party" className="w-full h-full object-cover" /> : <User size={48} className="text-gray-500" />}
               </div>
 
               <input type="file" id="photo-upload" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
@@ -136,14 +124,23 @@ export function AddPartyForm({ onClose, sidebarOpen }) {
             <label className="text-sm font-medium text-gray-700 mb-2 block">Party Type</label>
             <div className="flex gap-3">
               <button
-                onClick={() => { setPartyType('Customer'); setTransactionType('To Receive'); }}
-                className={`px-4 py-2 text-sm font-medium rounded transition-colors duration-200 border ${partyType === 'Customer' ? `${CUSTOM_BLUE} text-white` : 'bg-gray-100 text-gray-700 border-gray-300'}`}
+                type="button"
+                onClick={() => {
+                  setPartyType("Customer");
+                  setTransactionType("To Receive");
+                }}
+                className={`px-4 py-2 text-sm font-medium rounded transition-colors duration-200 border ${partyType === "Customer" ? `${CUSTOM_BLUE} text-white` : "bg-gray-100 text-gray-700 border-gray-300"}`}
               >
                 Customer
               </button>
+
               <button
-                onClick={() => { setPartyType('Supplier'); setTransactionType('To Give'); }}
-                className={`px-4 py-2 text-sm font-medium rounded transition-colors duration-200 border ${partyType === 'Supplier' ? `${CUSTOM_BLUE} text-white` : 'bg-gray-100 text-gray-700 border-gray-300'}`}
+                type="button"
+                onClick={() => {
+                  setPartyType("Supplier");
+                  setTransactionType("To Give");
+                }}
+                className={`px-4 py-2 text-sm font-medium rounded transition-colors duration-200 border ${partyType === "Supplier" ? `${CUSTOM_BLUE} text-white` : "bg-gray-100 text-gray-700 border-gray-300"}`}
               >
                 Supplier
               </button>
@@ -155,7 +152,7 @@ export function AddPartyForm({ onClose, sidebarOpen }) {
             <TabButton name="Additional Info" />
           </div>
 
-          {activeTab === 'Credit Info' && (
+          {activeTab === "Credit Info" && (
             <div className="space-y-6">
               <div className="flex gap-6">
                 <div className="flex flex-col w-1/2">
@@ -189,11 +186,10 @@ export function AddPartyForm({ onClose, sidebarOpen }) {
             </div>
           )}
 
-          {activeTab === 'Additional Info' && (
-            <div className="text-gray-500 p-4">Additional fields go here (GSTIN, Address, Email, etc.)</div>
-          )}
+          {activeTab === "Additional Info" && <div className="text-gray-500 p-4">Additional fields go here (GSTIN, Address, Email, etc.)</div>}
         </div>
 
+        {/* Footer */}
         <div className="flex justify-end p-4 border-t border-gray-200 bg-gray-50 rounded-b-lg">
           <button onClick={handleSave} className={`flex items-center gap-2 px-6 py-3 ${CUSTOM_BLUE} text-white rounded-lg font-semibold ${CUSTOM_BLUE_HOVER_BG} transition-colors duration-200 shadow-md`}>
             Save Party
@@ -201,20 +197,5 @@ export function AddPartyForm({ onClose, sidebarOpen }) {
         </div>
       </div>
     </div>
-  );
-}
-
-// helper component used inside AddPartyForm
-function TransactionButton({ type, label }) {
-  const [transactionType, setTransactionType] = React.useState('To Receive');
-  return (
-    <button
-      onClick={() => setTransactionType(type)}
-      className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors duration-200 border ${
-        transactionType === type ? `${CUSTOM_BLUE} text-white border-transparent shadow-md` : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-      }`}
-    >
-      {label}
-    </button>
   );
 }

@@ -1,10 +1,10 @@
-import React, { useState } from "react";
+// src/components/ImportItemsPage.jsx
+import React, { useState, useContext } from "react";
 import { FileText, Download, CloudUpload } from "lucide-react";
-
-const CUSTOM_BLUE = "bg-[#172554]";
-const CUSTOM_BLUE_HOVER_BG = "hover:bg-[#111A31]";
+import { ThemeContext } from "../context/ThemeContext"; // adjust path if your ThemeContext lives elsewhere
 
 export function ImportItemsPage({ sidebarOpen }) {
+  const { theme } = useContext(ThemeContext); // read current theme, in case you want theme-specific logic
   const expandedWidth = "24rem";
   const COLLAPSED_MARGIN = "4rem";
   const sidebarOffset = sidebarOpen ? expandedWidth : COLLAPSED_MARGIN;
@@ -34,56 +34,78 @@ export function ImportItemsPage({ sidebarOpen }) {
     }
   };
 
+  // theme-driven styles using CSS variables set by your ThemeProvider
+  const pageStyle = {
+    left: sidebarOffset,
+    width: `calc(100% - ${sidebarOffset})`,
+    background: "var(--bg-default, #ffffff)",
+    color: "var(--text-default, #0f172a)",
+  };
+
+  // panel behind the table (light grey) using --surface-100 (fallback to light grey)
+  const tablePanelStyle = {
+    background: "var(--surface-100, #f3f4f6)", // light grey panel
+    borderRadius: 8,
+    border: "1px solid rgba(0,0,0,0.06)",
+    overflowX: "auto",
+  };
+
+  const headerStyle = {
+    background: "var(--primary-500, #172554)",
+    color: "var(--text-on-primary, #ffffff)",
+  };
+
+  const downloadBtnStyle = {
+    background: "var(--primary-500, #172554)",
+    color: "var(--text-on-primary, #ffffff)",
+  };
+
+  const rightColumnStyle = {
+    background: "var(--surface-200, #fafafa)",
+  };
+
+  const dropZoneActiveStyle = {
+    borderColor: "var(--primary-500, #172554)",
+    background: "rgba(0,0,0,0.03)",
+  };
+
   return (
     <div
-      className="fixed top-16 right-0 bottom-0 bg-white flex"
-      style={{
-        left: sidebarOffset,
-        width: `calc(100% - ${sidebarOffset})`,
-      }}
+      className="fixed top-16 right-0 bottom-0 flex"
+      style={pageStyle}
+      aria-live="polite"
     >
       {/* LEFT SECTION */}
       <div className="w-1/2 p-10 overflow-y-auto">
-        <h2 className="text-2xl font-bold mb-6">Import Items in 3 Steps</h2>
+        <h2 className="text-2xl font-bold mb-6" style={{ color: "var(--text-default, #0f172a)" }}>
+          Import Items in 3 Steps
+        </h2>
 
         {/* Step 1 */}
-        <h3 className="text-xl font-bold mb-6">
+        <h3 className="text-xl font-bold mb-6" style={{ color: "var(--text-default, #0f172a)" }}>
           1. Download the file & Fill Data
         </h3>
-        <p className="text-gray-600 mb-4">
+        <p className="text-sm mb-4" style={{ color: "var(--muted, rgba(0,0,0,0.6))" }}>
           Download our sample excel file and enter your data according to the file format.
         </p>
 
-        {/* Sample Table */}
-        <div className="border border-gray-300 rounded-lg overflow-x-auto mb-6 shadow-sm">
+        {/* Sample Table (panel with light grey background) */}
+        <div className="mb-6 shadow-sm" style={tablePanelStyle}>
           <table className="min-w-full divide-y divide-gray-200 text-sm">
-            <thead className={CUSTOM_BLUE}>
+            <thead style={headerStyle}>
               <tr>
-                <th className="px-3 py-2 text-left text-white uppercase text-xs">
-                  Item Name
-                </th>
-                <th className="px-3 py-2 text-left text-white uppercase text-xs">
-                  Category
-                </th>
-                <th className="px-3 py-2 text-left text-white uppercase text-xs">
-                  Sale Price
-                </th>
-                <th className="px-3 py-2 text-left text-white uppercase text-xs">
-                  Purchase Price
-                </th>
-                <th className="px-3 py-2 text-left text-white uppercase text-xs">
-                  Opening Stock
-                </th>
-                <th className="px-3 py-2 text-left text-white uppercase text-xs">
-                  Low Stock
-                </th>
-                <th className="px-3 py-2 text-left text-white uppercase text-xs">
-                  Item Code
-                </th>
+                <th className="px-3 py-2 text-left text-xs uppercase tracking-wider">Item Name</th>
+                <th className="px-3 py-2 text-left text-xs uppercase tracking-wider">Category</th>
+                <th className="px-3 py-2 text-left text-xs uppercase tracking-wider">Sale Price</th>
+                <th className="px-3 py-2 text-left text-xs uppercase tracking-wider">Purchase Price</th>
+                <th className="px-3 py-2 text-left text-xs uppercase tracking-wider">Opening Stock</th>
+                <th className="px-3 py-2 text-left text-xs uppercase tracking-wider">Low Stock</th>
+                <th className="px-3 py-2 text-left text-xs uppercase tracking-wider">Item Code</th>
               </tr>
             </thead>
 
-            <tbody className="divide-y divide-gray-200">
+            {/* keep tbody rows white for readability, but inside the panel */}
+            <tbody className="divide-y divide-gray-200" style={{ background: "var(--bg-default, #ffffff)", color: "var(--text-default, #0f172a)" }}>
               <tr>
                 <td className="px-3 py-2">Clear Gold Soap</td>
                 <td className="px-3 py-2">General</td>
@@ -121,34 +143,39 @@ export function ImportItemsPage({ sidebarOpen }) {
         <a
           href="/files/sample_items.xlsx"
           download="sample_items_import.xlsx"
-          className={`inline-flex items-center gap-2 px-6 py-3 text-white rounded-lg font-semibold ${CUSTOM_BLUE} ${CUSTOM_BLUE_HOVER_BG} shadow-sm mb-12`}
+          className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold mb-12 transition-colors"
+          style={downloadBtnStyle}
+          aria-label="Download sample items file"
         >
-          <Download size={20} />
+          <Download size={18} />
           Download Sample File
         </a>
 
         {/* Steps 2 & 3 */}
-        <h3 className="text-xl font-bold mb-2">2. Review & Adjust Data</h3>
-        <p className="text-gray-600 mb-6">
+        <h3 className="text-xl font-bold mb-2" style={{ color: "var(--text-default, #0f172a)" }}>2. Review & Adjust Data</h3>
+        <p className="text-sm mb-6" style={{ color: "var(--muted, rgba(0,0,0,0.6))" }}>
           Review your data inside the app. Fix errors before importing.
         </p>
 
-        <h3 className="text-xl font-bold mb-2">3. Confirm & Import</h3>
-        <p className="text-gray-600 mb-6">
+        <h3 className="text-xl font-bold mb-2" style={{ color: "var(--text-default, #0f172a)" }}>3. Confirm & Import</h3>
+        <p className="text-sm mb-6" style={{ color: "var(--muted, rgba(0,0,0,0.6))" }}>
           Once everything looks correct, begin the import.
         </p>
       </div>
 
       {/* RIGHT SECTION - DRAG & DROP */}
-      <div className="w-1/2 p-10 flex items-center justify-center bg-gray-50 border-l border-gray-200">
+      <div
+        className="w-1/2 p-10 flex items-center justify-center border-l"
+        style={{ ...rightColumnStyle, borderColor: "rgba(0,0,0,0.06)" }}
+      >
         <label
           htmlFor="file-upload-items"
-          className={`w-full h-full border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-colors 
-            ${isDragging ? "border-blue-500 bg-blue-50/50" : "border-gray-300 hover:border-blue-400"}`}
+          className="w-full h-full border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-colors"
           onDragOver={handleDragOver}
           onDragEnter={handleDragEnter}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
+          style={isDragging ? dropZoneActiveStyle : { borderColor: "rgba(0,0,0,0.08)" }}
         >
           <input
             type="file"
@@ -159,24 +186,17 @@ export function ImportItemsPage({ sidebarOpen }) {
           />
 
           {uploadedFile ? (
-            <div className="text-center p-4">
-              <FileText size={48} className="text-green-500 mx-auto mb-4" />
-              <p className="text-gray-700 text-lg font-semibold">File Ready:</p>
-              <p className="text-green-600">{uploadedFile.name}</p>
-              <p className="text-gray-400 text-sm mt-2">Click to change file</p>
+            <div className="text-center p-4" style={{ color: "var(--text-default, #0f172a)" }}>
+              <FileText size={48} className="mx-auto mb-4" style={{ color: "var(--success, #16a34a)" }} />
+              <p className="text-lg font-semibold mb-1">File Ready:</p>
+              <p className="font-medium" style={{ color: "var(--success, #16a34a)" }}>{uploadedFile.name}</p>
+              <p className="text-sm mt-2" style={{ color: "var(--muted, rgba(0,0,0,0.6))" }}>Click to change file</p>
             </div>
           ) : (
             <>
-              <CloudUpload
-                size={48}
-                className={`mb-4 ${
-                  isDragging ? "text-blue-500" : "text-gray-400"
-                }`}
-              />
-              <p className="text-gray-500 text-lg font-semibold">
-                Click to Upload or Drag & Drop
-              </p>
-              <p className="text-gray-400 text-sm mt-1">
+              <CloudUpload size={48} className="mb-4" style={{ color: isDragging ? "var(--primary-500, #172554)" : "var(--muted, rgba(0,0,0,0.4))" }} />
+              <p className="text-lg font-semibold">Click to Upload or Drag & Drop</p>
+              <p className="text-sm mt-1" style={{ color: "var(--muted, rgba(0,0,0,0.6))" }}>
                 Excel files up to 500 entries & 1MB supported.
               </p>
             </>
@@ -186,3 +206,5 @@ export function ImportItemsPage({ sidebarOpen }) {
     </div>
   );
 }
+
+export default ImportItemsPage;
