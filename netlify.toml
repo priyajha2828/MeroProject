@@ -1,0 +1,4 @@
+[build]
+  base = "arthik-marg"
+  publish = "arthik-marg/dist"  # Vite default output
+  command = "npm run build"
