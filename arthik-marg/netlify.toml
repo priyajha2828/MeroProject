@@ -1,0 +1,4 @@
+[build]
+  base = "arthik-marg"
+  publish = "dist"
+  command = "npm run build"
